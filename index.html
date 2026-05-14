@@ -681,7 +681,7 @@ body::after{
    ============================================ */
 const ecomImgs=['1dba6d464c97070ded55d67af1338276.jpg','7ef5171806440715ab4a9da36ce214eb.jpg','d4e2bda0fb136708965d0e26b3c37c49.png','d4fc90bb56bca593b45231bb0adc47a5.jpg','eb29cfc37dbf48c7399cabc3e0253195.jpg','f8b9441b73521ae2deac5ee65064b246.jpg'];
 const posterImgs=['4d08e76c94c64fff6e443cef4b021d6c.jpg','5b3772b9b6faa11d190db741dfb32bc8.jpg','959e104982a12e0126ba21848daf9253.jpg','d2fa004bc9586c491bdfd4d1f50a4bf5.jpg'];
-function img(cat,i){const a=cat==='电商设计'?ecomImgs:posterImgs;return`images/${cat}/${a[i%a.length]}`}
+function img(cat,i){const f=cat==='电商设计'?'ecommerce':'poster';const a=cat==='电商设计'?ecomImgs:posterImgs;return`images/${f}/${a[i%a.length]}`}
 
 function getDefaultWorks(){return[
   {id:1,title:'OMEGA · 手表天猫详情页',category:'电商设计',client:'OMEGA旗舰店',year:'2024',img:img('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'为 OMEGA 手表旗舰店设计天猫详情页，需要突出产品的高端质感与精密工艺，同时保持页面的视觉冲击力。'},{t:'text',title:'设计思路',c:'采用深色基调配合金属质感元素，通过大图展示产品细节，营造奢华氛围。页面结构清晰，引导用户逐步深入了解产品特性。'}],specs:{'项目类型':'电商详情页','客户':'OMEGA旗舰店','年份':'2024','服务内容':'页面规划 / 视觉设计 / 图文排版'}},
