@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio · 作品集</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   Reset & Design Tokens — Liquid Glass System
+   ============================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f3f2ef;
+  --glass-strong:rgba(255,255,255,.72);
+  --glass-mid:rgba(255,255,255,.58);
+  --glass-light:rgba(255,255,255,.44);
+  --glass-border:rgba(255,255,255,.55);
+  --glass-border-strong:rgba(255,255,255,.8);
+  --glass-shadow:0 8px 32px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.03),inset 0 1px 0 rgba(255,255,255,.6);
+  --glass-shadow-lg:0 20px 56px rgba(0,0,0,.09),0 4px 12px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.7);
+  --text:#1d1d1f;
+  --text-secondary:#6e6e73;
+  --text-tertiary:#aeaeb2;
+  --accent:#0071e3;
+  --accent-glow:rgba(0,113,227,.25);
+  --blur-heavy:blur(28px) saturate(200%);
+  --blur-mid:blur(18px) saturate(180%);
+  --blur-light:blur(10px) saturate(160%);
+  --radius-sm:14px;
+  --radius:18px;
+  --radius-lg:28px;
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{
+  font-family:'Inter','Noto Sans SC',system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);
+  line-height:1.6;overflow-x:hidden;
+}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
+
+/* ============================================
+   Canvas Particle Background
+   ============================================ */
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.9}
+body::after{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.02;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================
+   Shared Glass Mixin (via class)
+   ============================================ */
+.glass-card{
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  border-radius:var(--radius-lg);position:relative;overflow:hidden;
+}
+.glass-card::after{
+  content:'';position:absolute;top:0;left:12px;right:12px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);
+  pointer-events:none;z-index:2;border-radius:1px;
+}
+.glass-pill{
+  background:var(--glass-mid);backdrop-filter:var(--blur-mid);-webkit-backdrop-filter:var(--blur-mid);
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  border-radius:100px;position:relative;overflow:hidden;
+}
+.glass-pill::after{
+  content:'';position:absolute;top:0;left:20px;right:20px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  pointer-events:none;z-index:2;
+}
+
+/* ============================================
+   Navigation — Floating Glass Pill
+   ============================================ */
+.nav{
+  position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:100;
+  width:calc(100% - 48px);max-width:1400px;
+  padding:0 28px;height:54px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border-strong);border-radius:100px;
+  box-shadow:var(--glass-shadow-lg);
+  transition:transform .45s var(--ease-out),box-shadow .4s;
+}
+.nav::after{
+  content:'';position:absolute;top:0;left:30px;right:30px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  pointer-events:none;z-index:2;
+}
+.nav.hidden{transform:translateX(-50%) translateY(-130%)}
+.nav-brand{font-size:18px;font-weight:600;letter-spacing:-.02em;position:relative;z-index:1}
+.nav-links{display:flex;gap:6px;list-style:none;position:relative;z-index:1}
+.nav-links a{
+  font-size:13px;font-weight:450;color:var(--text-secondary);
+  padding:8px 18px;border-radius:100px;
+  transition:all .3s;letter-spacing:.01em;
+  position:relative;
+}
+.nav-links a:hover{color:var(--text);background:rgba(0,0,0,.035)}
+.nav-links a.active{color:#fff;background:var(--accent);box-shadow:0 4px 14px var(--accent-glow)}
+
+/* ============================================
+   Hero — Glass Card Layout
+   ============================================ */
+.hero{
+  position:relative;z-index:1;
+  padding:128px 48px 40px;
+  max-width:1400px;margin:0 auto;
+  display:grid;grid-template-columns:1fr auto;gap:48px;
+  align-items:center;
+}
+.hero-tag{
+  font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text-secondary);margin-bottom:16px;
+}
+.hero-title{
+  font-size:clamp(32px,4.5vw,56px);font-weight:340;letter-spacing:-.03em;
+  line-height:1.15;margin-bottom:16px;
+}
+.hero-title span{display:block}
+.hero-desc{font-size:15px;color:var(--text-secondary);font-weight:350;line-height:1.7;max-width:440px}
+.hero-right{}
+.avatar-card{
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  padding:28px 32px;border-radius:var(--radius-lg);
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border-strong);box-shadow:var(--glass-shadow-lg);
+  text-align:center;transition:box-shadow .4s,transform .4s;
+  min-width:200px;position:relative;overflow:hidden;
+}
+.avatar-card::after{
+  content:'';position:absolute;top:0;left:16px;right:16px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+  pointer-events:none;
+}
+.avatar-card:hover{box-shadow:0 24px 64px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.7);transform:translateY(-3px)}
+.avatar-img{
+  width:96px;height:96px;border-radius:50%;overflow:hidden;
+  background:linear-gradient(135deg,#e8e6e1,#d5d2cc);
+  box-shadow:0 8px 24px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.5);
+}
+.avatar-img img{width:100%;height:100%;object-fit:cover}
+.avatar-name{font-size:17px;font-weight:550;letter-spacing:-.01em;position:relative;z-index:1}
+.avatar-role{font-size:12px;color:var(--text-secondary);letter-spacing:.04em;margin-top:-8px;position:relative;z-index:1}
+.avatar-email{
+  font-size:12px;color:var(--text-tertiary);letter-spacing:.02em;
+  padding:7px 16px;border-radius:100px;
+  background:rgba(0,0,0,.025);transition:all .25s;
+  position:relative;z-index:1;
+}
+.avatar-email:hover{background:rgba(0,0,0,.05);color:var(--text-secondary)}
+
+/* ============================================
+   Filter — Glass Pills
+   ============================================ */
+.filter-section{position:relative;z-index:1;padding:0 48px;max-width:1400px;margin:0 auto 32px}
+.filter-list{display:flex;gap:10px;flex-wrap:wrap;list-style:none}
+.filter-btn{
+  padding:10px 24px;border-radius:100px;
+  font-size:13px;font-weight:480;letter-spacing:.02em;
+  color:var(--text-secondary);
+  background:var(--glass-mid);backdrop-filter:var(--blur-mid);-webkit-backdrop-filter:var(--blur-mid);
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  transition:all .35s var(--ease-out);
+  position:relative;overflow:hidden;cursor:pointer;
+}
+.filter-btn::after{
+  content:'';position:absolute;top:0;left:16px;right:16px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  opacity:0;transition:opacity .35s;
+}
+.filter-btn:hover{
+  color:var(--text);background:var(--glass-strong);
+  border-color:var(--glass-border-strong);
+  transform:translateY(-1px) scale(1.03);
+  box-shadow:0 6px 20px rgba(0,0,0,.06);
+}
+.filter-btn:hover::after{opacity:1}
+.filter-btn:active{transform:scale(.96)}
+.filter-btn.active{
+  color:#fff;background:var(--accent);border-color:var(--accent);
+  box-shadow:0 4px 20px var(--accent-glow);
+  transform:scale(1);
+}
+.filter-btn.active::after{display:none}
+.filter-btn span{position:relative;z-index:1}
+
+/* ============================================
+   Gallery — Masonry (CSS Columns, varying heights)
+   ============================================ */
+.gallery{
+  column-count:4;column-gap:20px;
+  padding:0 48px 64px;max-width:1400px;margin:0 auto;
+  position:relative;z-index:1;
+}
+.work-card{
+  position:relative;cursor:pointer;break-inside:avoid;
+  margin-bottom:22px;
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border);border-radius:var(--radius-lg);
+  box-shadow:var(--glass-shadow);overflow:hidden;
+  opacity:0;transform:translateY(20px);
+  transition:box-shadow .45s var(--ease-out),transform .45s var(--ease-out),opacity .5s;
+}
+.work-card::after{
+  content:'';position:absolute;top:0;left:16px;right:16px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);
+  pointer-events:none;z-index:2;opacity:0;transition:opacity .35s;
+}
+.work-card:hover::after{opacity:1}
+.work-card.revealed{opacity:1;transform:translateY(0)}
+.work-card:hover{
+  box-shadow:var(--glass-shadow-lg);
+  transform:translateY(-4px);
+}
+.work-card:active{transform:scale(.985)}
+.work-card-image{
+  position:relative;overflow:hidden;
+  margin:8px 8px 0;border-radius:var(--radius-sm);
+  background:#e8e6e2;
+}
+.work-card-image img{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform .8s var(--ease-out);
+}
+.work-card:hover .work-card-image img{transform:scale(1.06)}
+.work-card-glass-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.4) 100%);
+  opacity:0;transition:opacity .4s;pointer-events:none;
+  border-radius:var(--radius-sm);
+  display:flex;align-items:flex-end;padding:16px;
+}
+.work-card:hover .work-card-glass-overlay{opacity:1}
+.work-card-glass-overlay span{
+  color:#fff;font-size:11px;font-weight:500;letter-spacing:.08em;
+  padding:6px 14px;border-radius:100px;
+  background:rgba(255,255,255,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.3);
+}
+/* Compact info — tight to image, auto-adapts */
+.work-card-info{
+  padding:12px 16px 13px;position:relative;z-index:1;
+}
+.work-card-category{
+  font-size:10.5px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-secondary);margin-bottom:3px;
+}
+.work-card-title{font-size:14px;font-weight:530;letter-spacing:-.01em;line-height:1.3}
+.work-card-year{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+
+/* ============================================
+   Detail Overlay — Full Glass
+   ============================================ */
+.detail-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(243,242,239,.95);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  overflow-y:auto;overflow-x:hidden;
+  visibility:hidden;opacity:0;
+  transition:visibility .4s,opacity .4s;
+  scroll-behavior:smooth;
+}
+.detail-overlay.open{visibility:visible;opacity:1}
+.detail-overlay::-webkit-scrollbar{width:4px}
+.detail-overlay::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px}
+
+.detail-header{
+  position:sticky;top:14px;z-index:10;
+  margin:14px auto 0;width:calc(100% - 48px);max-width:900px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;height:52px;
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border-strong);border-radius:100px;
+  box-shadow:var(--glass-shadow-lg);
+}
+.detail-header::after{content:'';position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);pointer-events:none}
+.detail-back{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:480;color:var(--text-secondary);
+  padding:7px 14px;border-radius:100px;
+  transition:all .25s;position:relative;z-index:1;
+}
+.detail-back:hover{color:var(--text);background:rgba(0,0,0,.04)}
+.detail-back svg{width:16px;height:16px;transition:transform .3s}
+.detail-back:hover svg{transform:translateX(-2px)}
+.detail-nav-actions{display:flex;gap:6px;align-items:center;position:relative;z-index:1}
+.detail-nav-btn{
+  width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .25s;color:var(--text-secondary);
+  border-radius:100px;
+}
+.detail-nav-btn:hover{color:var(--text);background:rgba(0,0,0,.05)}
+.detail-nav-btn svg{width:16px;height:16px}
+.detail-counter{
+  font-size:12px;font-weight:450;color:var(--text-tertiary);
+  letter-spacing:.04em;font-variant-numeric:tabular-nums;font-family:'Inter',monospace;
+  position:relative;z-index:1;
+}
+
+.detail-back-to-top{
+  position:fixed;bottom:28px;right:28px;z-index:210;
+  width:44px;height:44px;border-radius:50%;
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border-strong);color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--glass-shadow-lg);
+  opacity:0;visibility:hidden;transform:translateY(8px);
+  transition:all .3s var(--ease-out);
+}
+.detail-back-to-top:hover{color:var(--accent);transform:translateY(-2px)}
+.detail-back-to-top.visible{opacity:1;visibility:visible;transform:translateY(0)}
+.detail-back-to-top svg{width:18px;height:18px}
+
+.detail-body{max-width:900px;margin:0 auto;padding:32px 24px 80px}
+.detail-hero-image{
+  width:100%;background:#e8e6e2;border-radius:var(--radius-lg);
+  overflow:hidden;margin-bottom:40px;
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+}
+.detail-hero-image img{width:100%;height:100%;object-fit:cover}
+.detail-title-section{margin-bottom:44px}
+.detail-category{font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:10px}
+.detail-title{font-size:clamp(26px,4vw,38px);font-weight:350;letter-spacing:-.02em;line-height:1.2;margin-bottom:14px}
+.detail-desc{font-size:15px;color:var(--text-secondary);line-height:1.8;max-width:600px}
+.detail-meta{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:24px;
+  padding:28px 0;border-top:1px solid rgba(0,0,0,.05);border-bottom:1px solid rgba(0,0,0,.05);
+  margin-bottom:44px;
+}
+.detail-meta-label{font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:5px}
+.detail-meta-value{font-size:13px;font-weight:520}
+
+.detail-content-blocks{display:flex;flex-direction:column;gap:0}
+.detail-block-image{
+  margin-bottom:8px;border-radius:var(--radius-lg);overflow:hidden;
+  background:#e8e6e2;border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  opacity:0;transform:translateY(20px);
+  transition:opacity .55s,transform .55s var(--ease-out);
+}
+.detail-block-image.revealed{opacity:1;transform:translateY(0)}
+.detail-block-image img{width:100%;display:block}
+.detail-block-text{
+  padding:36px 0;margin-bottom:4px;
+  opacity:0;transform:translateY(20px);
+  transition:opacity .55s,transform .55s var(--ease-out);
+}
+.detail-block-text.revealed{opacity:1;transform:translateY(0)}
+.detail-block-text h3{font-size:20px;font-weight:520;letter-spacing:-.01em;margin-bottom:10px}
+.detail-block-text p{font-size:14px;color:var(--text-secondary);line-height:1.85;max-width:560px}
+
+.detail-bottom-nav{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:40px 0;border-top:1px solid rgba(0,0,0,.05);margin-top:48px;
+}
+.detail-bottom-link{
+  font-size:12px;font-weight:500;letter-spacing:.03em;
+  color:var(--text-secondary);
+  display:flex;align-items:center;gap:6px;
+  padding:8px 18px;border-radius:100px;
+  transition:all .25s;
+}
+.detail-bottom-link:hover{color:var(--text);background:rgba(0,0,0,.03)}
+
+/* ============================================
+   Footer
+   ============================================ */
+.footer{position:relative;z-index:1;padding:44px;text-align:center}
+.footer-text{font-size:12px;color:var(--text-tertiary);letter-spacing:.02em}
+
+/* ============================================
+   Admin Panel
+   ============================================ */
+.admin-toggle{
+  position:fixed;bottom:24px;left:24px;z-index:300;
+  height:44px;padding:0 18px;border-radius:100px;
+  background:var(--accent);color:#fff;
+  border:none;box-shadow:0 4px 16px var(--accent-glow);
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:500;letter-spacing:.03em;
+  transition:all .3s;cursor:pointer;
+}
+.admin-toggle:hover{transform:scale(1.05);box-shadow:0 6px 24px var(--accent-glow)}
+.admin-overlay{
+  position:fixed;inset:0;z-index:290;background:rgba(0,0,0,.3);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  visibility:hidden;opacity:0;transition:visibility .3s,opacity .3s;
+  display:flex;align-items:center;justify-content:center;
+}
+.admin-overlay.open{visibility:visible;opacity:1}
+.admin-panel{
+  width:calc(100% - 48px);max-width:1100px;max-height:85vh;
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border-strong);border-radius:var(--radius-lg);
+  box-shadow:var(--glass-shadow-lg);overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.admin-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;border-bottom:1px solid rgba(0,0,0,.06);
+}
+.admin-header h2{font-size:17px;font-weight:550}
+.admin-close{font-size:13px;color:var(--text-secondary);padding:6px 14px;border-radius:100px;transition:all .25s}
+.admin-close:hover{color:var(--text);background:rgba(0,0,0,.04)}
+.admin-list{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.admin-item{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 16px;border-radius:var(--radius-sm);
+  background:rgba(0,0,0,.015);border:1px solid rgba(0,0,0,.04);
+  transition:border-color .25s;
+}
+.admin-item:hover{border-color:rgba(0,0,0,.1)}
+.admin-item-preview{width:64px;height:64px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#e8e6e2}
+.admin-item-preview img{width:100%;height:100%;object-fit:cover}
+.admin-item-fields{display:flex;gap:10px;flex-wrap:wrap;flex:1;align-items:center}
+.admin-item-fields input,.admin-item-fields textarea{
+  font-family:inherit;font-size:12.5px;padding:7px 10px;
+  border:1px solid rgba(0,0,0,.08);border-radius:8px;
+  background:rgba(255,255,255,.5);color:var(--text);
+  outline:none;transition:border-color .25s;
+}
+.admin-item-fields input:focus,.admin-item-fields textarea:focus{border-color:var(--accent)}
+.admin-item-fields input.name{width:160px;font-weight:520}
+.admin-item-fields input.img{width:260px;font-size:11px;color:var(--text-secondary)}
+.admin-item-fields input.client{width:110px}
+.admin-item-fields input.year{width:56px;text-align:center}
+.admin-item-cat{
+  font-size:11px;font-weight:500;padding:5px 12px;border-radius:100px;
+  background:rgba(0,0,0,.04);color:var(--text-secondary);flex-shrink:0;
+}
+.admin-footer{
+  display:flex;gap:10px;padding:16px 24px;border-top:1px solid rgba(0,0,0,.06);
+}
+.admin-btn{
+  font-size:12px;font-weight:500;padding:8px 20px;border-radius:100px;
+  transition:all .25s;letter-spacing:.02em;
+}
+.admin-btn-save{color:#fff;background:var(--accent)}
+.admin-btn-save:hover{box-shadow:0 4px 14px var(--accent-glow)}
+.admin-btn-reset{color:var(--text-secondary);background:rgba(0,0,0,.03)}
+.admin-btn-reset:hover{background:rgba(0,0,0,.06);color:var(--text)}
+.admin-note{font-size:11px;color:var(--text-tertiary);align-self:center;margin-left:auto}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media(max-width:1024px){
+  .gallery{column-count:2;column-gap:14px;padding:0 24px 48px}
+  .gallery .work-card{margin-bottom:16px}
+  .nav{width:calc(100% - 32px);padding:0 20px;height:50px;top:14px}
+  .hero{grid-template-columns:1fr;gap:28px;padding:112px 24px 28px}
+  .hero-title{font-size:clamp(28px,5vw,44px)}
+  .avatar-card{flex-direction:row;gap:16px;padding:20px 26px;text-align:left;align-items:center}
+  .avatar-img{width:68px;height:68px}
+  .filter-section{padding:0 24px;margin-bottom:24px}
+  .detail-meta{grid-template-columns:repeat(2,1fr)}
+  .detail-header{width:calc(100% - 32px);top:10px}
+}
+@media(max-width:640px){
+  .gallery{column-count:1;column-gap:14px;padding:0 16px 40px}
+  .gallery .work-card{margin-bottom:14px}
+  .nav{width:calc(100% - 20px);padding:0 16px;height:46px;top:10px}
+  .nav-links a{font-size:12px;padding:6px 12px}
+  .hero{padding:96px 16px 24px;gap:20px}
+  .hero-title{font-size:28px}
+  .hero-desc{font-size:13px}
+  .avatar-card{padding:16px 18px;gap:12px}
+  .avatar-img{width:52px;height:52px}
+  .avatar-name{font-size:15px}
+  .filter-section{padding:0 16px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .filter-list{flex-wrap:nowrap}
+  .filter-btn{white-space:nowrap;font-size:11px;padding:8px 16px}
+  .detail-meta{grid-template-columns:1fr 1fr;gap:14px}
+  .detail-header{width:calc(100% - 16px);padding:0 16px;height:46px;top:8px}
+  .detail-back{font-size:12px}
+  .detail-body{padding:24px 16px 48px}
+  .detail-bottom-nav{flex-direction:column;gap:12px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<!-- Navigation -->
+<nav class="nav" id="nav">
+  <a href="#" class="nav-brand">Portfolio</a>
+  <ul class="nav-links">
+    <li><a href="#works" class="active">作品</a></li>
+    <li><a href="#about">关于</a></li>
+    <li><a href="#contact">联系</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="about">
+  <div class="hero-left">
+    <div class="hero-tag">E-commerce Design · Poster Art</div>
+    <h1 class="hero-title"><span>用视觉语言</span><span>讲述品牌故事</span></h1>
+    <p class="hero-desc">专注电商设计与海报视觉，以简约克制的设计语言，<br>为每个品牌创造独特的视觉表达。</p>
+  </div>
+  <div class="hero-right">
+    <div class="avatar-card">
+      <div class="avatar-img"><img src="https://picsum.photos/seed/avatar-portfolio/200/200" alt="Avatar" loading="lazy"></div>
+      <div class="avatar-name">谭方瑞</div>
+      <div class="avatar-role">22岁</div>
+      <a href="mailto:2101480035@qq.com" class="avatar-email">2101480035@qq.com</a>
+    </div>
+  </div>
+</section>
+
+<!-- Filter -->
+<section class="filter-section" id="works">
+  <ul class="filter-list" id="filterList">
+    <li><button class="filter-btn active" data-category="all"><span>全部作品</span></button></li>
+    <li><button class="filter-btn" data-category="电商设计"><span>电商设计</span></button></li>
+    <li><button class="filter-btn" data-category="海报设计"><span>海报设计</span></button></li>
+  </ul>
+</section>
+
+<!-- Gallery -->
+<section class="gallery" id="gallery"></section>
+
+<footer class="footer" id="contact"><p class="footer-text">© 2025 Portfolio · 2101480035@qq.com</p></footer>
+
+<!-- Detail Overlay -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-header">
+    <button class="detail-back" id="detailBack">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>返回
+    </button>
+    <span class="detail-counter" id="detailCounter"></span>
+    <div class="detail-nav-actions">
+      <button class="detail-nav-btn" id="detailPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="detail-nav-btn" id="detailNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+  <div class="detail-bottom-nav" style="max-width:900px;margin:0 auto;padding:40px 24px 64px">
+    <button class="detail-bottom-link" id="detailPrevBottom">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>上一个作品
+    </button>
+    <button class="detail-bottom-link" id="detailNextBottom">
+      下一个作品<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>
+  <button class="detail-back-to-top" id="detailBackToTop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+  </button>
+</div>
+
+<!-- Admin Toggle -->
+<button class="admin-toggle" id="adminToggle" title="管理作品 (Ctrl+E)">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+  管理
+</button>
+
+<!-- Admin Overlay -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>作品管理</h2>
+      <button class="admin-close" id="adminClose">关闭</button>
+    </div>
+    <div class="admin-list" id="adminList"></div>
+    <div class="admin-footer">
+      <button class="admin-btn admin-btn-save" id="adminSave">保存并同步</button>
+      <button class="admin-btn admin-btn-reset" id="adminReset">恢复默认</button>
+      <span class="admin-note">修改图片路径后，将新图片放入 images 文件夹即可</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================
+   Canvas Particle System — Enhanced
+   ============================================ */
+(function(){
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles, rings;
+
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+  function createElements(){
+    const pCount = Math.floor((W * H) / 15000);
+    particles = [];
+    const colors = [
+      'rgba(0,113,227,','rgba(120,105,220,','rgba(180,155,130,',
+      'rgba(100,165,210,','rgba(165,140,185,','rgba(80,150,170,',
+      'rgba(190,120,150,','rgba(130,140,200,',
+    ];
+    for(let i = 0; i < pCount; i++){
+      particles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+        r:Math.random()*2.2+1.2,
+        color:colors[Math.floor(Math.random()*colors.length)],
+        alpha:Math.random()*.4+.08,
+        pulse:Math.random()*Math.PI*2
+      });
+    }
+    // Floating glass rings
+    rings = [];
+    const ringCount = Math.floor((W * H) / 200000);
+    for(let i = 0; i < ringCount; i++){
+      rings.push({
+        x:Math.random()*W, y:Math.random()*H,
+        r:Math.random()*60+30,
+        vx:(Math.random()-.5)*.15, vy:(Math.random()-.5)*.15,
+        alpha:Math.random()*.06+.02,
+        rot:Math.random()*Math.PI*2, rotV:(Math.random()-.5)*.002
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // Particles
+    for(let i = 0; i < particles.length; i++){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < -30) p.x = W+30; if(p.x > W+30) p.x = -30;
+      if(p.y < -30) p.y = H+30; if(p.y > H+30) p.y = -30;
+      p.pulse += .008;
+
+      const glow = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3.5);
+      const a = p.alpha * (1 + Math.sin(p.pulse)*.25);
+      glow.addColorStop(0, p.color + (a*1.3) + ')');
+      glow.addColorStop(.45, p.color + (a*.5) + ')');
+      glow.addColorStop(1, p.color + '0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*3.5, 0, Math.PI*2); ctx.fill();
+
+      ctx.fillStyle = p.color + a + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    }
+    // Connections
+    ctx.lineWidth = .35;
+    for(let i = 0; i < particles.length; i++){
+      for(let j = i+1; j < particles.length; j++){
+        const dx = particles[i].x-particles[j].x;
+        const dy = particles[i].y-particles[j].y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        if(dist < 130){
+          ctx.strokeStyle = 'rgba(0,0,0,' + (0.028*(1-dist/130)) + ')';
+          ctx.beginPath(); ctx.moveTo(particles[i].x,particles[i].y); ctx.lineTo(particles[j].x,particles[j].y); ctx.stroke();
+        }
+      }
+    }
+    // Glass rings
+    for(let i = 0; i < rings.length; i++){
+      const r = rings[i];
+      r.x += r.vx; r.y += r.vy; r.rot += r.rotV;
+      if(r.x < -80) r.x = W+80; if(r.x > W+80) r.x = -80;
+      if(r.y < -80) r.y = H+80; if(r.y > H+80) r.y = -80;
+      ctx.save(); ctx.translate(r.x, r.y); ctx.rotate(r.rot);
+      ctx.strokeStyle = 'rgba(0,0,0,' + r.alpha + ')';
+      ctx.lineWidth = .6;
+      ctx.beginPath(); ctx.ellipse(0, 0, r.r, r.r*.55, 0, 0, Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize',()=>{resize();createElements();});
+  resize(); createElements(); draw();
+})();
+
+/* ============================================
+   Works Data
+   ============================================ */
+const ecomImgs=['1dba6d464c97070ded55d67af1338276.jpg','7ef5171806440715ab4a9da36ce214eb.jpg','d4e2bda0fb136708965d0e26b3c37c49.png','d4fc90bb56bca593b45231bb0adc47a5.jpg','eb29cfc37dbf48c7399cabc3e0253195.jpg','f8b9441b73521ae2deac5ee65064b246.jpg'];
+const posterImgs=['4d08e76c94c64fff6e443cef4b021d6c.jpg','5b3772b9b6faa11d190db741dfb32bc8.jpg','959e104982a12e0126ba21848daf9253.jpg','d2fa004bc9586c491bdfd4d1f50a4bf5.jpg'];
+function img(cat,i){const a=cat==='电商设计'?ecomImgs:posterImgs;return`images/${cat}/${a[i%a.length]}`}
+
+function getDefaultWorks(){return[
+  {id:1,title:'OMEGA · 手表天猫详情页',category:'电商设计',client:'OMEGA旗舰店',year:'2024',img:img('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'为 OMEGA 手表旗舰店设计天猫详情页，需要突出产品的高端质感与精密工艺，同时保持页面的视觉冲击力。'},{t:'text',title:'设计思路',c:'采用深色基调配合金属质感元素，通过大图展示产品细节，营造奢华氛围。页面结构清晰，引导用户逐步深入了解产品特性。'}],specs:{'项目类型':'电商详情页','客户':'OMEGA旗舰店','年份':'2024','服务内容':'页面规划 / 视觉设计 / 图文排版'}},
+  {id:2,title:'花西子 · 口红详情页',category:'电商设计',client:'花西子旗舰店',year:'2024',img:img('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'花西子新品口红上市，需要一套完整的电商详情页设计，突出东方美学的品牌基因与产品特色。'}],specs:{'项目类型':'电商详情页','客户':'花西子旗舰店','年份':'2024','服务内容':'视觉设计 / 精修排版 / 文案策划'}},
+  {id:3,title:'小米有品 · 家电详情页',category:'电商设计',client:'小米有品',year:'2024',img:img('电商设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'小米有品智能家电新品上线，需要设计符合小米品牌调性的电商详情页，强调科技感与性价比。'}],specs:{'项目类型':'电商详情页','客户':'小米有品','年份':'2024','服务内容':'页面设计 / 3D渲染 / 详情排版'}},
+  {id:4,title:'Nike · 跑步鞋详情页',category:'电商设计',client:'Nike旗舰店',year:'2024',img:img('电商设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'Nike 新款跑鞋天猫详情页设计，需要突出产品的科技含量与运动性能，同时保持品牌一贯的动感调性。'}],specs:{'项目类型':'电商详情页','客户':'Nike旗舰店','年份':'2024','服务内容':'视觉设计 / 动效设计 / 文案排版'}},
+  {id:5,title:'美的 · 空调详情页',category:'电商设计',client:'美的旗舰店',year:'2024',img:img('电商设计',4),detail:[{t:'image'},{t:'text',title:'项目背景',c:'美的智能空调新品详情页设计，需要清晰传达产品的核心卖点与技术优势。'}],specs:{'项目类型':'电商详情页','客户':'美的旗舰店','年份':'2024','服务内容':'页面设计 / 卖点策划 / ICON设计'}},
+  {id:6,title:'瑞幸 · 樱花季详情页',category:'电商设计',client:'瑞幸咖啡',year:'2024',img:img('电商设计',5),detail:[{t:'image'},{t:'text',title:'项目背景',c:'瑞幸咖啡樱花季限定系列详情页设计，需要营造春日浪漫氛围，吸引女性消费群体。'}],specs:{'项目类型':'电商详情页','客户':'瑞幸咖啡','年份':'2024','服务内容':'视觉设计 / 场景搭建 / 文案策划'}},
+  {id:7,title:'COLORKEY · 唇釉详情页',category:'电商设计',client:'COLORKEY旗舰店',year:'2024',img:img('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'COLORKEY 新品唇釉系列详情页设计，针对Z世代消费群体，需要潮流感与视觉冲击力。'}],specs:{'项目类型':'电商详情页','客户':'COLORKEY旗舰店','年份':'2024','服务内容':'视觉设计 / 模特精修 / 详情排版'}},
+  {id:8,title:'野兽派 · 香薰详情页',category:'电商设计',client:'野兽派旗舰店',year:'2024',img:img('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'野兽派高端香薰系列详情页，需要营造沉浸式的感官体验，用视觉传达嗅觉的美感。'}],specs:{'项目类型':'电商详情页','客户':'野兽派旗舰店','年份':'2024','服务内容':'视觉设计 / 场景拍摄 / 详情排版'}},
+  {id:9,title:'极光音乐节 · 海报系列',category:'海报设计',client:'极光音乐节',year:'2024',img:img('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'极光音乐节是一年一度的户外音乐盛会，需要一套视觉冲击力强的海报系列用于线上线下宣传。'}],specs:{'项目类型':'海报设计','客户':'极光音乐节','年份':'2024','服务内容':'主视觉 / 系列海报 / 动态海报'}},
+  {id:10,title:'京东618 · 活动主视觉',category:'海报设计',client:'京东',year:'2024',img:img('海报设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'京东618年中大促活动主视觉设计，需要在众多促销信息中脱颖而出，传递狂欢氛围。'}],specs:{'项目类型':'活动主视觉','客户':'京东','年份':'2024','服务内容':'主KV / 延展物料 / 会场设计'}},
+  {id:11,title:'双11 · 天猫主视觉',category:'海报设计',client:'天猫',year:'2024',img:img('海报设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'天猫双11全球狂欢节主视觉设计，需要兼顾品牌调性与大促氛围，在线上线下多触点统一传达。'}],specs:{'项目类型':'活动主视觉','客户':'天猫','年份':'2024','服务内容':'主KV / 会场设计 / 线下物料'}},
+  {id:12,title:'时光印记 · 摄影展海报',category:'海报设计',client:'城市美术馆',year:'2024',img:img('海报设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'"时光印记"城市摄影展海报设计，需要在方寸之间传达展览的主题与艺术调性。'}],specs:{'项目类型':'海报设计','客户':'城市美术馆','年份':'2024','服务内容':'主海报 / 系列海报 / 展览物料'}},
+  {id:13,title:'蔚来 · 新车发布海报',category:'海报设计',client:'蔚来汽车',year:'2024',img:img('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'蔚来新款车型发布预热海报系列，需要在发布前通过视觉逐步揭开新车面纱，制造期待感。'}],specs:{'项目类型':'海报设计','客户':'蔚来汽车','年份':'2024','服务内容':'预热海报 / 发布主视觉 / 社交媒体物料'}}
+]}
+
+// Load works from localStorage or use defaults
+let works = (()=>{
+  try{const d=localStorage.getItem('pf_works');if(d)return JSON.parse(d)}catch(e){}
+  return getDefaultWorks();
+})();
+
+let activeFilter='all',currentWorkId=null,lastScrollY=0;
+const galleryEl=document.getElementById('gallery'),filterList=document.getElementById('filterList'),
+  detailOverlay=document.getElementById('detailOverlay'),detailBody=document.getElementById('detailBody'),
+  detailBack=document.getElementById('detailBack'),detailPrev=document.getElementById('detailPrev'),
+  detailNext=document.getElementById('detailNext'),detailPrevBottom=document.getElementById('detailPrevBottom'),
+  detailNextBottom=document.getElementById('detailNextBottom'),detailCounter=document.getElementById('detailCounter'),
+  detailBackToTop=document.getElementById('detailBackToTop'),nav=document.getElementById('nav');
+
+function renderGallery(filter){
+  const filtered=filter==='all'?works:works.filter(w=>w.category===filter);
+  galleryEl.innerHTML=filtered.map((w,i)=>`
+    <div class="work-card" data-id="${w.id}">
+      <div class="work-card-image" style="aspect-ratio:3/4">
+        <img src="${w.img}" alt="${w.title}" loading="lazy" onload="this.parentElement.style.aspectRatio=this.naturalWidth+'/'+this.naturalHeight">
+        <div class="work-card-glass-overlay"><span>查看作品</span></div>
+      </div>
+      <div class="work-card-info">
+        <div class="work-card-category">${w.category}</div>
+        <div class="work-card-title">${w.title}</div>
+        <div class="work-card-year">${w.year}</div>
+      </div>
+    </div>
+  `).join('');
+  galleryEl.querySelectorAll('.work-card').forEach(card=>{card.addEventListener('click',()=>openDetail(parseInt(card.dataset.id)))});
+  requestAnimationFrame(()=>{
+    const cards=galleryEl.querySelectorAll('.work-card');
+    const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})},{threshold:.06,rootMargin:'0px 0px -24px 0px'});
+    cards.forEach((c,i)=>{c.style.transitionDelay=`${i*.04}s`;obs.observe(c)});
+  });
+}
+
+filterList.addEventListener('click',e=>{
+  const btn=e.target.closest('.filter-btn');
+  if(!btn||btn.dataset.category===activeFilter)return;
+  filterList.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');activeFilter=btn.dataset.category;
+  const cards=galleryEl.querySelectorAll('.work-card');
+  cards.forEach((c,i)=>{c.style.transition='opacity .2s,transform .2s';c.style.transitionDelay=`${i*.015}s`;c.style.opacity='0';c.style.transform='translateY(10px)'});
+  setTimeout(()=>renderGallery(activeFilter),280);
+});
+
+function openDetail(id){
+  const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
+  let html='';
+  if(w.detail[0]&&w.detail[0].t==='image')html+=`<div class="detail-hero-image" style="aspect-ratio:3/4"><img src="${w.img}" alt="${w.title}" onload="this.parentElement.style.aspectRatio=this.naturalWidth+'/'+this.naturalHeight"></div>`;
+  html+=`<div class="detail-title-section"><div class="detail-category">${w.category}</div><h2 class="detail-title">${w.title}</h2><p class="detail-desc">${w.detail.find(d=>d.t==='text')?.c||''}</p></div>`;
+  html+='<div class="detail-meta">';
+  for(const[k,v]of Object.entries(w.specs))html+=`<div class="detail-meta-item"><div class="detail-meta-label">${k}</div><div class="detail-meta-value">${v}</div></div>`;
+  html+='</div>';
+  let sH=false,sFT=false;html+='<div class="detail-content-blocks">';
+  w.detail.forEach(b=>{if(b.t==='image'&&!sH){sH=true;return}if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${w.img}" alt="${w.title}" loading="lazy" onload="this.parentElement.style.aspectRatio=this.naturalWidth+'/'+this.naturalHeight"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
+  html+='</div>';
+  detailBody.innerHTML=html;detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';updateDetailNav();
+  requestAnimationFrame(()=>{const blocks=detailBody.querySelectorAll('[data-reveal]');const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})},{threshold:.08,rootMargin:'0px 0px -32px 0px'});blocks.forEach(b=>obs.observe(b))});
+}
+
+function closeDetail(){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBackToTop.classList.remove('visible')}
+function updateDetailNav(){const idx=works.findIndex(w=>w.id===currentWorkId);const p=idx>0,n=idx<works.length-1;[detailPrev,detailPrevBottom].forEach(el=>{el.style.opacity=p?'1':'.35';el.style.pointerEvents=p?'auto':'none'});[detailNext,detailNextBottom].forEach(el=>{el.style.opacity=n?'1':'.35';el.style.pointerEvents=n?'auto':'none'});detailCounter.textContent=`${String(idx+1).padStart(2,'0')} / ${String(works.length).padStart(2,'0')}`}
+function navDetail(dir){const idx=works.findIndex(w=>w.id===currentWorkId);const n=works[idx+dir];if(n)openDetail(n.id)}
+
+detailBack.addEventListener('click',closeDetail);
+detailPrev.addEventListener('click',()=>navDetail(-1));detailNext.addEventListener('click',()=>navDetail(1));
+detailPrevBottom.addEventListener('click',()=>navDetail(-1));detailNextBottom.addEventListener('click',()=>navDetail(1));
+document.addEventListener('keydown',e=>{if(!detailOverlay.classList.contains('open'))return;if(e.key==='Escape')closeDetail();if(e.key==='ArrowLeft')navDetail(-1);if(e.key==='ArrowRight')navDetail(1)});
+detailOverlay.addEventListener('click',e=>{if(e.target===detailOverlay)closeDetail()});
+detailOverlay.addEventListener('scroll',()=>{detailBackToTop.classList.toggle('visible',detailOverlay.scrollTop>400)},{passive:true});
+detailBackToTop.addEventListener('click',()=>{detailOverlay.scrollTo({top:0,behavior:'smooth'})});
+
+/* ============================================
+   Admin Panel
+   ============================================ */
+const adminToggle=document.getElementById('adminToggle'),adminOverlay=document.getElementById('adminOverlay'),
+  adminClose=document.getElementById('adminClose'),adminList=document.getElementById('adminList'),
+  adminSave=document.getElementById('adminSave'),adminReset=document.getElementById('adminReset');
+
+function openAdmin(){
+  adminOverlay.classList.add('open');
+  renderAdminList();
+}
+function closeAdmin(){adminOverlay.classList.remove('open')}
+
+function renderAdminList(){
+  adminList.innerHTML=works.map(w=>`
+    <div class="admin-item" data-id="${w.id}">
+      <div class="admin-item-preview"><img src="${w.img}" alt="" onerror="this.style.display='none'"></div>
+      <span class="admin-item-cat">${w.category}</span>
+      <div class="admin-item-fields">
+        <input class="name" value="${esc(w.title)}" data-field="title" placeholder="作品名称">
+        <input class="img" value="${esc(w.img)}" data-field="img" placeholder="图片路径" oninput="this.closest('.admin-item').querySelector('.admin-item-preview img').src=this.value">
+        <input class="client" value="${esc(w.client)}" data-field="client" placeholder="客户">
+        <input class="year" value="${esc(w.year)}" data-field="year" placeholder="年份">
+      </div>
+    </div>
+  `).join('');
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function saveWorks(){
+  adminList.querySelectorAll('.admin-item').forEach(el=>{
+    const id=parseInt(el.dataset.id);
+    const w=works.find(x=>x.id===id);if(!w)return;
+    el.querySelectorAll('[data-field]').forEach(inp=>{
+      const f=inp.dataset.field;
+      if(f==='title')w.title=inp.value;
+      else if(f==='img')w.img=inp.value;
+      else if(f==='client')w.client=inp.value;
+      else if(f==='year')w.year=inp.value;
+    });
+    if(w.specs){
+      if(w.client)w.specs['客户']=w.client;
+      if(w.year)w.specs['年份']=w.year;
+    }
+  });
+  try{localStorage.setItem('pf_works',JSON.stringify(works))}catch(e){}
+  renderGallery(activeFilter);
+  closeAdmin();
+}
+
+function resetWorks(){
+  if(!confirm('确定要恢复为默认数据吗？当前修改将丢失。'))return;
+  works=getDefaultWorks();
+  try{localStorage.removeItem('pf_works')}catch(e){}
+  renderGallery(activeFilter);
+  renderAdminList();
+}
+
+adminToggle.addEventListener('click',openAdmin);
+adminClose.addEventListener('click',closeAdmin);
+adminOverlay.addEventListener('click',e=>{if(e.target===adminOverlay)closeAdmin()});
+adminSave.addEventListener('click',saveWorks);
+adminReset.addEventListener('click',resetWorks);
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='e'){e.preventDefault();adminOverlay.classList.contains('open')?closeAdmin():openAdmin()}
+  if(e.key==='Escape'&&adminOverlay.classList.contains('open')){closeAdmin();e.stopPropagation()}
+});
+
+window.addEventListener('scroll',()=>{const y=window.scrollY;if(y>200&&y>lastScrollY+6)nav.classList.add('hidden');else if(y<lastScrollY-3)nav.classList.remove('hidden');lastScrollY=y},{passive:true});
+
+renderGallery('all');
+window.addEventListener('load',()=>renderGallery(activeFilter));
+</script>
+</body>
+</html>
