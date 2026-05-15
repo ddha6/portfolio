@@ -613,6 +613,7 @@ body::after{
   </div>
 </div>
 
+<script src="data.js"></script>
 <script>
 /* ============================================
    Canvas Particle System — Enhanced
@@ -735,7 +736,7 @@ function getDefaultWorks(){return[
 // Load works from localStorage or use defaults
 function loadWorks(){
   try{const d=localStorage.getItem('pf_works');if(d)return JSON.parse(d)}catch(e){}
-  return getDefaultWorks();
+  return DEFAULT_WORKS;
 }
 let works = loadWorks();
 
