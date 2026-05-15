@@ -512,10 +512,10 @@ function deployToGitHub(){
   save();
   if(typeof GITHUB_TOKEN==='undefined'){toast('token.js 未加载，请确认文件存在');return}
   var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';
-  // Base64 encode with UTF-8 support
-  var bytes=[];for(var i=0;i<js.length;i++){var c=js.charCodeAt(i);if(c<128)bytes.push(c);else if(c<2048){bytes.push(192|(c>>6));bytes.push(128|(c&63))}else{bytes.push(224|(c>>12));bytes.push(128|((c>>6)&63));bytes.push(128|(c&63))}}
-  var content='';for(var i=0;i<bytes.length;i++)content+=String.fromCharCode(bytes[i]);
-  content=btoa(content);
+  // Base64 encode with UTF-8 support (using TextEncoder)
+  var encoder=new TextEncoder();var bytes=encoder.encode(js);
+  var bin='';for(var i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  var content=btoa(bin);
   // Get current file SHA
   var xhr=new XMLHttpRequest();
   xhr.open('GET','https://api.github.com/repos/'+GITHUB_REPO+'/contents/data.js',true);
