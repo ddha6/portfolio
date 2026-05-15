@@ -26,8 +26,10 @@ function initData() {
   const uploadDir = path.join(__dirname, 'images', 'uploads');
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
   if (!fs.existsSync(DATA_FILE)) {
-    const def = require('./data.js');
-    fs.writeFileSync(DATA_FILE, JSON.stringify((()=>{try{return DEFAULT_WORKS}catch(e){return def}})()));
+    // Load default data from data.js
+    const dataJs = fs.readFileSync(path.join(__dirname, 'data.js'), 'utf-8');
+    eval(dataJs); // defines DEFAULT_WORKS
+    fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_WORKS, null, 2), 'utf-8');
   }
 }
 
