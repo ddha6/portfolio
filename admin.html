@@ -207,6 +207,7 @@ body{
 <input type="file" id="galleryInput" accept="image/*" multiple style="display:none">
 
 <script src="data.js?v=20260515"></script>
+<script src="token.js"></script>
 <script>
 // ====== Data ======
 const ecomImgs=['1dba6d464c97070ded55d67af1338276.jpg','7ef5171806440715ab4a9da36ce214eb.jpg','d4e2bda0fb136708965d0e26b3c37c49.png','d4fc90bb56bca593b45231bb0adc47a5.jpg','eb29cfc37dbf48c7399cabc3e0253195.jpg','f8b9441b73521ae2deac5ee65064b246.jpg'];
@@ -348,7 +349,8 @@ function renderEditor(){
       '<p style="font-size:11px;color:var(--text3);margin-top:8px">拖拽模块可排序 · 点击 ✕ 删除 · 点击图片可重新上传</p>'+
     '</div>'+
     '<div style="display:flex;gap:10px">'+
-      '<button class="btn btn-primary" onclick="saveEditor()">保存修改</button>'+
+      '<button class="btn btn-primary" onclick="saveEditor()">保存</button>'+
+      '<button class="btn" style="background:#e53935;color:#fff;border-color:#e53935" onclick="deployToGitHub()">🚀 一键上线</button>'+
       '<button class="btn btn-outline" onclick="openPreview()">预览</button>'+
     '</div>';
 
@@ -518,6 +520,33 @@ function importData(){
   var inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=function(){if(!this.files[0])return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(!Array.isArray(d))throw new Error('');works=d;selectedId=null;save();renderEditor();toast('已导入 '+d.length+' 件作品')}catch(err){toast('格式错误')}};r.readAsText(this.files[0])};inp.click();
 }
+function deployToGitHub(){
+  save();
+  if(typeof GITHUB_TOKEN==='undefined'){toast('token.js 缺失');return}
+  var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';
+  var encoder=new TextEncoder();var bytes=encoder.encode(js);
+  var bin='';for(var i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+  var content=btoa(bin);
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET','https://api.github.com/repos/ddha6/portfolio/contents/data.js',true);
+  xhr.setRequestHeader('Authorization','token '+GITHUB_TOKEN);
+  xhr.setRequestHeader('Accept','application/vnd.github.v3+json');
+  xhr.onload=function(){
+    if(xhr.status===200||xhr.status===404){
+      var sha=null;if(xhr.status===200)sha=JSON.parse(xhr.responseText).sha;
+      var body=JSON.stringify({message:'update data',content:content,branch:'main'});
+      if(sha)body=JSON.stringify({message:'update data',content:content,sha:sha,branch:'main'});
+      var put=new XMLHttpRequest();
+      put.open('PUT','https://api.github.com/repos/ddha6/portfolio/contents/data.js',true);
+      put.setRequestHeader('Authorization','token '+GITHUB_TOKEN);
+      put.setRequestHeader('Content-Type','application/json');
+      put.onload=function(){if(put.status===200||put.status===201)toast('✓ 已上线');else toast('失败: '+put.status)};
+      put.send(body);
+    }else toast('网络错误')
+  };
+  xhr.send();
+}
+
 function resetAll(){
   if(!confirm('确定恢复默认数据？所有修改将丢失。'))return;
   works=DEFAULT_WORKS.slice();selectedId=null;try{localStorage.removeItem('pf_works')}catch(e){}save();renderEditor();toast('已恢复默认')
