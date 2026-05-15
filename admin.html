@@ -199,6 +199,7 @@ body{
 <!-- Hidden file inputs -->
 <input type="file" id="thumbInput" accept="image/*" style="display:none">
 <input type="file" id="blockImgInput" accept="image/*" style="display:none">
+<input type="file" id="galleryInput" accept="image/*" multiple style="display:none">
 
 <script>
 // ====== Data ======
@@ -306,13 +307,26 @@ function renderEditor(){
       '</div>'+
     '</div>'+
     '<div class="editor-section">'+
+      '<h3>主图集（可用于轮播，第一张为封面）</h3>'+
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px" id="galleryThumbs">'+
+        (w.gallery||[]).map(function(src,i){return'<div style="position:relative;width:90px;height:90px;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid '+(i===0?'var(--accent)':'rgba(0,0,0,.08)')+'" onclick="setCover('+i+')" title="'+(i===0?'当前封面':'点击设为封面')+'">'+
+          '<img src="'+esc(src)+'" style="width:100%;height:100%;object-fit:cover">'+
+          '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:9px;text-align:center;padding:3px">'+(i===0?'封面':'')+'</div>'+
+          '<div style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer" onclick="event.stopPropagation();removeGalleryImg('+i+')">✕</div>'+
+        '</div>'}).join('')+
+        (!w.gallery||w.gallery.length===0?('<span style="font-size:12px;color:var(--text3)">暂无主图集，请上传</span>'):'')+
+      '</div>'+
+      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'galleryInput\').click()">+ 上传主图</button>'+
+      '<p style="font-size:11px;color:var(--text3);margin-top:6px">首张为封面，点击图片可设为封面 · 封面同步为缩略图</p>'+
+    '</div>'+
+    '<div class="editor-section">'+
       '<h3>详情内容模块（淘宝式下滑详情）</h3>'+
       '<div class="blocks-list">'+detailBlocks+'</div>'+
       '<div class="block-add-row">'+
         '<button class="btn btn-outline" onclick="addBlock(\'image\')">+ 添加图片模块</button>'+
         '<button class="btn btn-outline" onclick="addBlock(\'text\')">+ 添加文字模块</button>'+
       '</div>'+
-      '<p style="font-size:11px;color:var(--text3);margin-top:8px">拖拽模块可排序 · 点击 ✕ 删除 · 图片模块可单独上传图片</p>'+
+      '<p style="font-size:11px;color:var(--text3);margin-top:8px">拖拽模块可排序 · 点击 ✕ 删除 · 点击图片可重新上传</p>'+
     '</div>'+
     '<div style="display:flex;gap:10px">'+
       '<button class="btn btn-primary" onclick="saveEditor()">保存修改</button>'+
@@ -330,6 +344,8 @@ function saveEditor(){
   w.client=document.getElementById('edClient').value;
   w.year=document.getElementById('edYear').value;
   if(w.specs){w.specs['客户']=w.client;w.specs['年份']=w.year}
+  // Sync cover from gallery
+  if(w.gallery&&w.gallery.length>0)w.img=w.gallery[0];
   save();renderEditor();toast('已保存 ✓')
 }
 
@@ -390,6 +406,31 @@ document.getElementById('blockImgInput').addEventListener('change',function(){
 });
 
 function editBlockImg(idx){editingBlockIdx=idx;document.getElementById('blockImgInput').click()}
+
+// Gallery management
+document.getElementById('galleryInput').addEventListener('change',function(){
+  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
+  if(!w.gallery)w.gallery=[];
+  var files=this.files;if(!files||files.length===0)return;
+  var loaded=0;
+  function loadNext(idx){
+    if(idx>=files.length){renderEditor();save();toast('已上传 '+loaded+' 张主图');return}
+    resizeImage(files[idx],function(b64){w.gallery.push(b64);loaded++;loadNext(idx+1)});
+  }
+  loadNext(0);this.value='';
+});
+
+function setCover(i){
+  var w=works.find(function(x){return x.id===selectedId});if(!w||!w.gallery)return;
+  var img=w.gallery.splice(i,1)[0];w.gallery.unshift(img);
+  w.img=img;renderEditor();save();toast('已设为封面')
+}
+function removeGalleryImg(i){
+  var w=works.find(function(x){return x.id===selectedId});if(!w||!w.gallery)return;
+  w.gallery.splice(i,1);if(i===0&&w.gallery.length>0)w.img=w.gallery[0];
+  renderEditor();save();
+}
+
 function deleteBlock(idx){
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
   w.detail.splice(idx,1);renderEditor();save();

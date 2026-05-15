@@ -749,7 +749,7 @@ function renderGallery(filter){
   const filtered=filter==='all'?works:works.filter(w=>w.category===filter);
   galleryEl.innerHTML=filtered.map((w,i)=>`
     <div class="work-card" data-id="${w.id}">
-      <div class="work-card-image" style="aspect-ratio:3/4">
+      <div class="work-card-image" style="aspect-ratio:${w.category==='海报设计'?'16/9':'3/4'}">
         <img src="${w.img}" alt="${w.title}" loading="lazy">
         <div class="work-card-glass-overlay"><span>查看作品</span></div>
       </div>
@@ -780,8 +780,10 @@ filterList.addEventListener('click',e=>{
 
 function openDetail(id){
   const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
-  // Collect images for carousel: main img + detail image blocks
-  const carouselImgs=[w.img];
+  // Collect images for carousel: gallery + detail image blocks
+  const carouselImgs=[];
+  if(w.gallery&&w.gallery.length>0){w.gallery.forEach(src=>carouselImgs.push(src))}
+  else{carouselImgs.push(w.img)}
   w.detail.forEach(b=>{if(b.t==='image'&&b.src&&b.src.length>10)carouselImgs.push(b.src)});
   let html='';
   if(carouselImgs.length>0){
