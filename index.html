@@ -265,11 +265,11 @@ body::after{
   position:fixed;inset:0;z-index:200;
   background:rgba(243,242,239,.95);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
   overflow-y:auto;overflow-x:hidden;
-  visibility:hidden;opacity:0;transform:scale(.96);
-  transition:visibility .45s,opacity .45s,transform .45s var(--ease-out);
-  scroll-behavior:smooth;
+  visibility:hidden;opacity:0;transform:translate3d(0,12px,0);
+  transition:visibility .35s,opacity .35s,transform .35s cubic-bezier(.22,1,.36,1);
+  scroll-behavior:smooth;will-change:transform,opacity;
 }
-.detail-overlay.open{visibility:visible;opacity:1;transform:scale(1)}
+.detail-overlay.open{visibility:visible;opacity:1;transform:translate3d(0,0,0)}
 .detail-overlay::-webkit-scrollbar{width:4px}
 .detail-overlay::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px}
 
@@ -327,12 +327,13 @@ body::after{
 .detail-back-to-top svg{width:18px;height:18px}
 
 .detail-body{max-width:900px;margin:0 auto;padding:32px 24px 80px}
-.detail-body.slide-in-left{animation:slideInLeft .35s var(--ease-out)}
-.detail-body.slide-in-right{animation:slideInRight .35s var(--ease-out)}
-@keyframes slideInLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
-@keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+.detail-body.slide-in-left{animation:slideInLeft .3s cubic-bezier(.22,1,.36,1)}
+.detail-body.slide-in-right{animation:slideInRight .3s cubic-bezier(.22,1,.36,1)}
+@keyframes slideInLeft{from{opacity:0;transform:translate3d(-40px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes slideInRight{from{opacity:0;transform:translate3d(40px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
 .detail-hero-image{
-  width:100%;background:#e8e6e2;border-radius:var(--radius-lg);
+  width:100%;max-width:80%;margin-left:auto;margin-right:auto;
+  background:#e8e6e2;border-radius:var(--radius-lg);
   overflow:hidden;margin-bottom:40px;
   border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
 }
@@ -510,6 +511,7 @@ body::after{
   .detail-header{width:calc(100% - 16px);padding:0 16px;height:46px;top:8px}
   .detail-back{font-size:12px}
   .detail-body{padding:24px 16px 48px}
+  .detail-hero-image{max-width:100%}
   .detail-bottom-nav{max-width:95vw}
 }
 </style>
