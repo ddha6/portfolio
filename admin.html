@@ -179,7 +179,8 @@ body{
       <button class="btn btn-primary" onclick="addWork()">+ 新建作品</button>
       <button class="btn btn-outline btn-sm" onclick="exportData()">导出</button>
       <button class="btn btn-outline btn-sm" onclick="importData()">导入</button>
-      <button class="btn btn-outline btn-sm" onclick="copyData()">📋 复制数据</button>
+      <button class="btn btn-outline btn-sm" onclick="copyData()">📋 复制</button>
+      <button class="btn btn-primary btn-sm" onclick="downloadDataJS()">🚀 发布</button>
       <button class="btn btn-danger btn-sm" onclick="resetAll()">重置</button>
     </div>
     <div class="work-list" id="workList"></div>
@@ -232,8 +233,8 @@ var selectedId=null,editingBlockIdx=null;
 var toastTimer;
 
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2000)}
-function save(){try{localStorage.setItem('pf_works',JSON.stringify(works));toast('已保存 ✓')}catch(e){toast('保存失败')};refreshList();downloadDataJS()}
-function downloadDataJS(){var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';var b=new Blob([js],{type:'application/javascript'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='data.js';a.click()}
+function save(){try{localStorage.setItem('pf_works',JSON.stringify(works));toast('已保存 ✓')}catch(e){toast('保存失败')};refreshList()}
+function downloadDataJS(){var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';var b=new Blob([js],{type:'application/javascript'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='data.js';a.click();toast('已下载 data.js，双击 deploy.bat 即可上线 ✓')}
 
 // ====== Sidebar List ======
 function refreshList(){
