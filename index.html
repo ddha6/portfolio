@@ -201,13 +201,13 @@ body::after{
    Gallery — Masonry (CSS Columns, varying heights)
    ============================================ */
 .gallery{
-  column-count:4;column-gap:20px;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:20px;align-items:start;
   padding:0 48px 64px;max-width:1400px;margin:0 auto;
   position:relative;z-index:1;
 }
 .work-card{
-  position:relative;cursor:pointer;break-inside:avoid;
-  margin-bottom:22px;
+  position:relative;cursor:pointer;
   background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
   border:1px solid var(--glass-border);border-radius:var(--radius-lg);
   box-shadow:var(--glass-shadow);overflow:hidden;
@@ -483,7 +483,7 @@ body::after{
    Responsive
    ============================================ */
 @media(max-width:1024px){
-  .gallery{column-count:2;column-gap:14px;padding:0 24px 48px}
+  .gallery{grid-template-columns:repeat(2,1fr);gap:14px;padding:0 24px 48px}
   .gallery .work-card{margin-bottom:16px}
   .nav{width:calc(100% - 32px);padding:0 20px;height:50px;top:14px}
   .hero{grid-template-columns:1fr;gap:28px;padding:112px 24px 28px}
@@ -496,7 +496,7 @@ body::after{
 }
 @media(max-width:640px){
   .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:0 10px 40px}
-  .gallery .work-card{margin-bottom:0;break-inside:unset}
+  .gallery .work-card{margin-bottom:0}
   .work-card-info{padding:10px 12px 10px}
   .work-card-title{font-size:13px}
   .work-card-category{font-size:9.5px}
