@@ -745,7 +745,7 @@ function renderGallery(filter){
   galleryEl.innerHTML=filtered.map((w,i)=>`
     <div class="work-card" data-id="${w.id}">
       <div class="work-card-image" style="aspect-ratio:3/4">
-        <img src="${w.img}" alt="${w.title}" loading="lazy" onload="this.parentElement.style.aspectRatio=this.naturalWidth+'/'+this.naturalHeight">
+        <img src="${w.img}" alt="${w.title}" loading="lazy">
         <div class="work-card-glass-overlay"><span>查看作品</span></div>
       </div>
       <div class="work-card-info">
@@ -776,13 +776,13 @@ filterList.addEventListener('click',e=>{
 function openDetail(id){
   const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
   let html='';
-  if(w.detail[0]&&w.detail[0].t==='image')html+=`<div class="detail-hero-image" style="aspect-ratio:3/4"><img src="${w.img}" alt="${w.title}" onload="this.parentElement.style.aspectRatio=this.naturalWidth+'/'+this.naturalHeight"></div>`;
+  if(w.detail[0]&&w.detail[0].t==='image')html+=`<div class="detail-hero-image" style="aspect-ratio:3/4"><img src="${w.img}" alt="${w.title}"></div>`;
   html+=`<div class="detail-title-section"><div class="detail-category">${w.category}</div><h2 class="detail-title">${w.title}</h2><p class="detail-desc">${w.detail.find(d=>d.t==='text')?.c||''}</p></div>`;
   html+='<div class="detail-meta">';
   for(const[k,v]of Object.entries(w.specs))html+=`<div class="detail-meta-item"><div class="detail-meta-label">${k}</div><div class="detail-meta-value">${v}</div></div>`;
   html+='</div>';
   let sH=false,sFT=false;html+='<div class="detail-content-blocks">';
-  w.detail.forEach(b=>{if(b.t==='image'&&!sH){sH=true;return}if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${w.img}" alt="${w.title}" loading="lazy" onload="this.parentElement.style.aspectRatio=this.naturalWidth+'/'+this.naturalHeight"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
+  w.detail.forEach(b=>{if(b.t==='image'&&!sH){sH=true;return}if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${w.img}" alt="${w.title}" loading="lazy"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
   html+='</div>';
   detailBody.innerHTML=html;detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';updateDetailNav();
   requestAnimationFrame(()=>{const blocks=detailBody.querySelectorAll('[data-reveal]');const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})},{threshold:.08,rootMargin:'0px 0px -32px 0px'});blocks.forEach(b=>obs.observe(b))});
