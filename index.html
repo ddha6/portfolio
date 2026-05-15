@@ -814,8 +814,9 @@ function openDetail(id){
   html+='<div class="detail-meta">';
   for(const[k,v]of Object.entries(w.specs))html+=`<div class="detail-meta-item"><div class="detail-meta-label">${k}</div><div class="detail-meta-value">${v}</div></div>`;
   html+='</div>';
-  let sH=false,sFT=false;html+='<div class="detail-content-blocks">';
-  w.detail.forEach(b=>{if(b.t==='image'&&!sH){sH=true;return}if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${b.src||w.img}" alt="${w.title}" loading="lazy"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
+  // Content blocks: show ALL detail items (images + text) below carousel
+  let sFT=false;html+='<div class="detail-content-blocks">';
+  w.detail.forEach(b=>{if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${b.src||w.img}" alt="${w.title}" loading="lazy"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
   html+='</div>';
   detailBody.innerHTML=html;detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';updateDetailNav();
   // Carousel logic
