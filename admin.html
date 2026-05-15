@@ -179,6 +179,7 @@ body{
       <button class="btn btn-primary" onclick="addWork()">+ 新建作品</button>
       <button class="btn btn-outline btn-sm" onclick="exportData()">导出</button>
       <button class="btn btn-outline btn-sm" onclick="importData()">导入</button>
+      <button class="btn btn-outline btn-sm" onclick="copyData()">📋 复制数据</button>
       <button class="btn btn-danger btn-sm" onclick="resetAll()">重置</button>
     </div>
     <div class="work-list" id="workList"></div>
@@ -478,6 +479,18 @@ function openPreview(){
 function closePreview(){document.getElementById('previewModal').classList.remove('open')}
 
 // ====== Export / Import / Reset ======
+function copyData(){
+  save();
+  var data=JSON.stringify(works);
+  navigator.clipboard.writeText(data).then(function(){
+    toast('已复制！粘贴发给助手即可上线 ✓');
+  }).catch(function(){
+    // Fallback for older browsers
+    var ta=document.createElement('textarea');ta.value=data;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    toast('已复制！粘贴发给助手即可上线 ✓');
+  });
+}
+
 function exportData(){
   var blob=new Blob([JSON.stringify(works,null,2)],{type:'application/json'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
