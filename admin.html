@@ -10,340 +10,355 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f3f2ef;--card:rgba(255,255,255,.72);--text:#1d1d1f;
+  --bg:#f3f2ef;--glass:rgba(255,255,255,.68);
+  --glass-border:rgba(255,255,255,.5);--text:#1d1d1f;
   --text2:#6e6e73;--text3:#aeaeb2;--accent:#0071e3;
-  --border:rgba(255,255,255,.55);--radius:16px;--radius-sm:12px;
+  --red:#e53935;--green:#2e7d32;
+  --radius:16px;--radius-sm:12px;--radius-xs:8px;
   --shadow:0 8px 32px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.03),inset 0 1px 0 rgba(255,255,255,.6);
+  --shadow-lg:0 20px 56px rgba(0,0,0,.09),inset 0 1px 0 rgba(255,255,255,.7);
   --ease:cubic-bezier(.16,1,.3,1);
 }
 html{-webkit-font-smoothing:antialiased}
 body{
   font-family:'Inter','Noto Sans SC',system-ui,sans-serif;
-  background:var(--bg);color:var(--text);line-height:1.6;height:100vh;overflow:hidden;
+  background:var(--bg);color:var(--text);line-height:1.6;
+  height:100vh;overflow:hidden;
 }
-.app{display:flex;height:100vh}
 ::selection{background:rgba(0,113,227,.2)}
-
-/* ====== Sidebar ====== */
+/* Canvas */
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.85}
+body::after{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.02;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* Layout */
+.app{display:flex;height:100vh;position:relative;z-index:1}
+/* Sidebar */
 .sidebar{
-  width:300px;flex-shrink:0;display:flex;flex-direction:column;
+  width:280px;flex-shrink:0;display:flex;flex-direction:column;
   background:rgba(255,255,255,.4);backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);
   border-right:1px solid rgba(0,0,0,.06);
 }
-.sidebar-header{
-  padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between;
-}
-.sidebar-header h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
-.sidebar-header .count{font-size:12px;color:var(--text3);background:rgba(0,0,0,.04);padding:3px 10px;border-radius:100px}
-.sidebar-actions{display:flex;gap:8px;padding:0 20px 14px}
+.sidebar-top{padding:20px 18px 10px}
+.sidebar-top h2{font-size:16px;font-weight:600;letter-spacing:-.01em;margin-bottom:2px}
+.sidebar-top .meta{font-size:11px;color:var(--text3)}
+.sidebar-actions{display:flex;gap:6px;padding:0 18px 12px;flex-wrap:wrap}
 .btn{
-  font-size:12px;font-weight:500;padding:7px 16px;border-radius:100px;border:none;cursor:pointer;
-  transition:all .25s;letter-spacing:.02em;
+  font-size:11.5px;font-weight:520;padding:7px 15px;border-radius:100px;border:none;
+  cursor:pointer;letter-spacing:.02em;transition:all .25s;
+  display:inline-flex;align-items:center;gap:4px;
 }
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{box-shadow:0 4px 14px rgba(0,113,227,.3)}
-.btn-outline{background:rgba(0,0,0,.03);color:var(--text2)}
-.btn-outline:hover{background:rgba(0,0,0,.06);color:var(--text)}
-.btn-sm{font-size:11px;padding:5px 12px}
-.btn-danger{color:#d32f2f;background:rgba(211,47,47,.06)}
-.btn-danger:hover{background:rgba(211,47,47,.12)}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{box-shadow:0 4px 14px rgba(0,113,227,.3);transform:translateY(-1px)}
+.btn-o{background:rgba(0,0,0,.03);color:var(--text2)}
+.btn-o:hover{background:rgba(0,0,0,.06);color:var(--text)}
+.btn-r{background:rgba(229,57,53,.08);color:var(--red)}
+.btn-r:hover{background:rgba(229,57,53,.15)}
+.btn-g{background:var(--red);color:#fff}
+.btn-g:hover{box-shadow:0 4px 14px rgba(229,57,53,.3)}
 
-.work-list{flex:1;overflow-y:auto;padding:0 12px 12px;display:flex;flex-direction:column;gap:4px}
-.work-list-item{
+.work-list{flex:1;overflow-y:auto;padding:4px 12px 12px;display:flex;flex-direction:column;gap:3px}
+.work-item{
   display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);
-  cursor:pointer;transition:all .2s;position:relative;
+  cursor:pointer;transition:all .2s;
 }
-.work-list-item:hover{background:rgba(0,0,0,.03)}
-.work-list-item.active{background:rgba(0,113,227,.08);box-shadow:inset 0 0 0 1px rgba(0,113,227,.15)}
-.work-list-item-thumb{
-  width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#e8e6e2;
+.work-item:hover{background:rgba(0,0,0,.03)}
+.work-item.active{background:rgba(0,113,227,.07);box-shadow:inset 0 0 0 1px rgba(0,113,227,.12)}
+.work-item-thumb{
+  width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#e8e6e2;
 }
-.work-list-item-thumb img{width:100%;height:100%;object-fit:cover}
-.work-list-item-info{flex:1;min-width:0}
-.work-list-item-title{font-size:13px;font-weight:520;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.work-list-item-meta{font-size:11px;color:var(--text3);margin-top:2px}
-.work-list-item-del{
-  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  color:var(--text3);opacity:0;transition:all .2s;flex-shrink:0;
+.work-item-thumb img{width:100%;height:100%;object-fit:cover}
+.work-item-info{flex:1;min-width:0}
+.work-item-title{font-size:12.5px;font-weight:530;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.work-item-cat{font-size:10px;color:var(--text3);margin-top:1px}
+.work-item-del{
+  width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--text3);opacity:0;transition:all .2s;flex-shrink:0;font-size:13px;
 }
-.work-list-item:hover .work-list-item-del{opacity:1}
-.work-list-item-del:hover{color:#d32f2f;background:rgba(211,47,47,.08)}
+.work-item:hover .work-item-del{opacity:1}
+.work-item-del:hover{color:var(--red);background:rgba(229,57,53,.08)}
 
-/* ====== Editor ====== */
-.editor{flex:1;overflow-y:auto;padding:24px 32px;display:flex;flex-direction:column;gap:24px}
-.editor-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px}
-.editor-section{
-  background:var(--card);backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);
-  border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);
+/* Editor */
+.editor{flex:1;overflow-y:auto;padding:24px 28px}
+.editor-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;flex-direction:column;gap:8px}
+.editor-grid{display:flex;flex-direction:column;gap:20px;max-width:900px}
+
+.card{
+  background:var(--glass);backdrop-filter:blur(28px) saturate(200%);-webkit-backdrop-filter:blur(28px) saturate(200%);
+  border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);
 }
-.editor-section h3{font-size:13px;font-weight:600;letter-spacing:.03em;margin-bottom:16px;color:var(--text2);text-transform:uppercase}
+.card::after{content:'';position:absolute;top:0;left:18px;right:18px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);pointer-events:none}
+.card h3{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:14px}
 .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .form-row:last-child{margin-bottom:0}
-.form-group{flex:1;min-width:150px}
-.form-group label{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
-.form-group input,.form-group textarea,.form-group select{
-  width:100%;font-family:inherit;font-size:13px;padding:9px 12px;
+.fg{flex:1;min-width:140px}
+.fg label{display:block;font-size:10px;font-weight:550;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.fg input,.fg select,.fg textarea{
+  width:100%;font-family:inherit;font-size:12.5px;padding:8px 12px;
   border:1px solid rgba(0,0,0,.08);border-radius:10px;
   background:rgba(255,255,255,.5);outline:none;transition:border .2s;
+  color:var(--text);
 }
-.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--accent)}
-.form-group textarea{resize:vertical;min-height:60px}
-
-/* Thumbnail upload */
-.thumb-upload{
-  width:160px;height:120px;border-radius:var(--radius-sm);overflow:hidden;
-  background:#e8e6e2;cursor:pointer;position:relative;border:2px dashed rgba(0,0,0,.1);
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent)}
+.fg textarea{resize:vertical;min-height:56px;line-height:1.6}
+.thumb-zone{
+  width:140px;height:105px;border-radius:12px;overflow:hidden;
+  background:#e8e6e2;cursor:pointer;border:2px dashed rgba(0,0,0,.1);
   display:flex;align-items:center;justify-content:center;transition:all .2s;
+  position:relative;
 }
-.thumb-upload:hover{border-color:var(--accent);background:rgba(0,113,227,.02)}
-.thumb-upload img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
-.thumb-upload .placeholder{font-size:12px;color:var(--text3);text-align:center;line-height:1.4}
+.thumb-zone:hover{border-color:var(--accent);background:rgba(0,113,227,.02)}
+.thumb-zone img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumb-zone .ph{font-size:11px;color:var(--text3);text-align:center;line-height:1.4}
 
-/* Detail blocks */
-.blocks-list{display:flex;flex-direction:column;gap:8px}
-.block-item{
-  display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius-sm);
-  background:rgba(0,0,0,.015);border:1px solid rgba(0,0,0,.04);transition:all .2s;
+/* Gallery strip */
+.gallery-strip{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+.gallery-item{
+  flex-shrink:0;width:80px;height:80px;border-radius:10px;overflow:hidden;
+  border:2px solid rgba(0,0,0,.06);cursor:pointer;position:relative;scroll-snap-align:start;
+  transition:border .2s;
 }
-.block-item:hover{border-color:rgba(0,0,0,.1)}
-.block-item.dragging{opacity:.4}
-.block-handle{cursor:grab;color:var(--text3);flex-shrink:0}
-.block-handle svg{width:16px;height:16px}
-.block-type{
-  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+.gallery-item:hover{border-color:var(--accent)}
+.gallery-item.cover{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,113,227,.2)}
+.gallery-item img{width:100%;height:100%;object-fit:cover}
+.gallery-item .label{
+  position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);
+  color:#fff;font-size:9px;text-align:center;padding:2px 0;
+}
+.gallery-item.cover .label{background:var(--accent);font-weight:600}
+.gallery-item .del{
+  position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;
+  background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:9px;cursor:pointer;opacity:0;transition:opacity .2s;
+}
+.gallery-item:hover .del{opacity:1}
+
+/* Blocks */
+.block-list{display:flex;flex-direction:column;gap:6px}
+.block-row{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-radius:10px;background:rgba(0,0,0,.015);border:1px solid rgba(0,0,0,.04);
+  transition:all .2s;
+}
+.block-row:hover{border-color:rgba(0,0,0,.1)}
+.block-row.dragging{opacity:.4}
+.block-handle{cursor:grab;color:var(--text3);font-size:14px;letter-spacing:-2px;flex-shrink:0}
+.block-tag{
+  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
   padding:3px 8px;border-radius:6px;flex-shrink:0;
 }
-.block-type.image{background:rgba(0,113,227,.08);color:var(--accent)}
-.block-type.text{background:rgba(100,180,100,.1);color:#2e7d32}
-.block-preview{flex:1;min-width:0;font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.block-preview img{width:60px;height:45px;object-fit:cover;border-radius:6px;vertical-align:middle}
-.block-delete{
-  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  color:var(--text3);cursor:pointer;transition:all .2s;flex-shrink:0;
+.block-tag.img{background:rgba(0,113,227,.08);color:var(--accent)}
+.block-tag.txt{background:rgba(46,125,50,.1);color:var(--green)}
+.block-preview{flex:1;min-width:0;font-size:11.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.block-preview img{width:50px;height:38px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:6px}
+.block-del{
+  width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--text3);cursor:pointer;transition:all .2s;flex-shrink:0;font-size:12px;
 }
-.block-delete:hover{color:#d32f2f;background:rgba(211,47,47,.08)}
-.block-add-row{display:flex;gap:8px;margin-top:8px}
+.block-del:hover{color:var(--red);background:rgba(229,57,53,.08)}
+.block-add{display:flex;gap:6px;margin-top:6px}
 
-/* Preview modal */
-.preview-modal{
-  position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);
-  display:flex;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:all .3s;
+/* Preview */
+.preview-overlay{
+  position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.4);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  visibility:hidden;opacity:0;transition:all .3s;
 }
-.preview-modal.open{visibility:visible;opacity:1}
-.preview-content{
-  width:400px;max-height:85vh;overflow-y:auto;background:var(--bg);
-  border-radius:var(--radius);box-shadow:0 24px 64px rgba(0,0,0,.2);
-  padding:0;
+.preview-overlay.open{visibility:visible;opacity:1}
+.preview-panel{
+  width:380px;max-height:85vh;overflow-y:auto;background:var(--bg);border-radius:var(--radius);
+  box-shadow:0 24px 64px rgba(0,0,0,.2);
 }
 .preview-close{
-  position:sticky;top:0;z-index:2;float:right;margin:12px;width:32px;height:32px;
-  border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:16px;border:none;transition:all .2s;
+  position:sticky;top:0;float:right;margin:10px;width:30px;height:30px;border-radius:50%;
+  background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;border:none;z-index:2;
 }
-.preview-close:hover{background:rgba(0,0,0,.7)}
-.preview-img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
-.preview-info{padding:20px}
-.preview-info h2{font-size:16px;font-weight:550;margin-bottom:4px}
-.preview-info .cat{font-size:11px;color:var(--accent);margin-bottom:8px}
-.preview-info .desc{font-size:13px;color:var(--text2);line-height:1.7}
-.preview-blocks{padding:0}
+.preview-hero{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.preview-info{padding:18px 20px}
+.preview-info .cat{font-size:10px;color:var(--accent);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.preview-info h4{font-size:15px;font-weight:550;margin-bottom:4px}
+.preview-info .price{font-size:18px;font-weight:700;color:var(--red);margin-bottom:8px}
+.preview-info .desc{font-size:12px;color:var(--text2);line-height:1.7}
 .preview-blocks img{width:100%;display:block}
-.preview-blocks .text-block{padding:20px}
-.preview-blocks .text-block h3{font-size:15px;margin-bottom:6px}
-.preview-blocks .text-block p{font-size:13px;color:var(--text2);line-height:1.7}
+.preview-blocks .t{font-size:15px;font-weight:520;margin-bottom:6px}
+.preview-blocks .p{font-size:12px;color:var(--text2);line-height:1.7}
 
-/* Toast */
 .toast{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;
-  padding:10px 24px;border-radius:100px;font-size:13px;font-weight:500;
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;
+  padding:10px 24px;border-radius:100px;font-size:12.5px;font-weight:500;
   background:var(--text);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.2);
-  opacity:0;transition:opacity .3s;
+  opacity:0;transition:opacity .3s;white-space:nowrap;
 }
 .toast.show{opacity:1}
 
 @media(max-width:768px){
   .app{flex-direction:column}
-  .sidebar{width:100%;max-height:40vh;flex-shrink:1}
-  .editor{padding:16px}
+  .sidebar{width:100%;max-height:38vh}
+  .editor{padding:14px}
   .form-row{flex-direction:column}
+  .card{padding:16px}
 }
 </style>
 </head>
 <body>
-
+<canvas id="bgCanvas"></canvas>
 <div class="app">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <h1>作品管理</h1>
-      <span class="count" id="workCount">0</span>
-    </div>
-    <div class="sidebar-actions">
-      <button class="btn btn-primary" onclick="addWork()">+ 新建作品</button>
-      <button class="btn btn-outline btn-sm" onclick="exportData()">导出</button>
-      <button class="btn btn-outline btn-sm" onclick="importData()">导入</button>
-      <button class="btn btn-outline btn-sm" onclick="copyData()">📋 复制</button>
-      <button class="btn btn-primary btn-sm" onclick="downloadDataJS()">🚀 发布</button>
-      <button class="btn btn-danger btn-sm" onclick="resetAll()">重置</button>
-    </div>
-    <div class="work-list" id="workList"></div>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-top">
+    <h2>作品管理</h2>
+    <span class="meta" id="workCount">0 件作品</span>
   </div>
-
-  <!-- Editor -->
-  <div class="editor" id="editor"></div>
+  <div class="sidebar-actions">
+    <button class="btn btn-p" onclick="addWork()">+ 新建</button>
+    <button class="btn btn-o" onclick="exportData()">导出</button>
+    <button class="btn btn-o" onclick="importData()">导入</button>
+    <button class="btn btn-r" onclick="resetAll()">重置</button>
+  </div>
+  <div class="work-list" id="workList"></div>
 </div>
-
-<!-- Preview Modal -->
-<div class="preview-modal" id="previewModal" onclick="if(event.target===this)closePreview()">
-  <div class="preview-content" id="previewContent"></div>
+<!-- Editor -->
+<div class="editor" id="editor"></div>
 </div>
-
+<!-- Preview -->
+<div class="preview-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()">
+  <div class="preview-panel" id="previewPanel"></div>
+</div>
 <!-- Toast -->
 <div class="toast" id="toast"></div>
-
-<!-- Hidden file inputs -->
+<!-- Hidden inputs -->
 <input type="file" id="thumbInput" accept="image/*" style="display:none">
-<input type="file" id="blockImgInput" accept="image/*" style="display:none">
 <input type="file" id="galleryInput" accept="image/*" multiple style="display:none">
+<input type="file" id="blockImgInput" accept="image/*" style="display:none">
 
 <script>document.write('<scr'+'ipt src="data.js?v='+Date.now()+'"></scr'+'ipt>')</script>
 <script src="token.js"></script>
 <script>
+// ====== Canvas Background ======
+(function(){
+  var c=document.getElementById('bgCanvas'),x=c.getContext('2d'),W,H,ps,rs;
+  function rz(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  function mk(){
+    var pc=Math.floor(W*H/18000);ps=[];
+    var cs=['rgba(0,113,227,','rgba(120,105,220,','rgba(180,155,130,','rgba(100,165,210,','rgba(165,140,185,)'];
+    for(var i=0;i<pc;i++)ps.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*2+1,cl:cs[Math.floor(Math.random()*cs.length)],a:Math.random()*.35+.05,pl:Math.random()*Math.PI*2});
+    rs=[];var rc=Math.floor(W*H/250000);
+    for(var i=0;i<rc;i++)rs.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*50+25,vx:(Math.random()-.5)*.1,vy:(Math.random()-.5)*.1,a:Math.random()*.05+.01,rot:Math.random()*Math.PI*2,rv:(Math.random()-.5)*.002});
+  }
+  function dr(){
+    x.clearRect(0,0,W,H);
+    for(var i=0;i<ps.length;i++){var p=ps[i];p.x+=p.vx;p.y+=p.vy;if(p.x<-20)p.x=W+20;if(p.x>W+20)p.x=-20;if(p.y<-20)p.y=H+20;if(p.y>H+20)p.y=-20;p.pl+=.008;var aa=p.a*(1+Math.sin(p.pl)*.2);var g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);g.addColorStop(0,p.cl+(aa*1.2)+')');g.addColorStop(.5,p.cl+(aa*.4)+')');g.addColorStop(1,p.cl+'0)');x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*3,0,Math.PI*2);x.fill();x.fillStyle=p.cl+aa+')';x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill()}
+    x.lineWidth=.3;for(var i=0;i<ps.length;i++)for(var j=i+1;j<ps.length;j++){var dx=ps[i].x-ps[j].x,dy=ps[i].y-ps[j].y,dt=Math.sqrt(dx*dx+dy*dy);if(dt<120){x.strokeStyle='rgba(0,0,0,'+(.022*(1-dt/120))+')';x.beginPath();x.moveTo(ps[i].x,ps[i].y);x.lineTo(ps[j].x,ps[j].y);x.stroke()}}
+    for(var i=0;i<rs.length;i++){var r=rs[i];r.x+=r.vx;r.y+=r.vy;r.rot+=r.rv;if(r.x<-60)r.x=W+60;if(r.x>W+60)r.x=-60;if(r.y<-60)r.y=H+60;if(r.y>H+60)r.y=-60;x.save();x.translate(r.x,r.y);x.rotate(r.rot);x.strokeStyle='rgba(0,0,0,'+r.a+')';x.lineWidth=.5;x.beginPath();x.ellipse(0,0,r.r,r.r*.55,0,0,Math.PI*2);x.stroke();x.restore()}
+    requestAnimationFrame(dr);
+  }
+  window.addEventListener('resize',function(){rz();mk()});rz();mk();dr();
+})();
+
 // ====== Data ======
-const ecomImgs=['1dba6d464c97070ded55d67af1338276.jpg','7ef5171806440715ab4a9da36ce214eb.jpg','d4e2bda0fb136708965d0e26b3c37c49.png','d4fc90bb56bca593b45231bb0adc47a5.jpg','eb29cfc37dbf48c7399cabc3e0253195.jpg','f8b9441b73521ae2deac5ee65064b246.jpg'];
-const posterImgs=['4d08e76c94c64fff6e443cef4b021d6c.jpg','5b3772b9b6faa11d190db741dfb32bc8.jpg','959e104982a12e0126ba21848daf9253.jpg','d2fa004bc9586c491bdfd4d1f50a4bf5.jpg'];
-function defImg(cat,i){var f=cat==='电商设计'?'ecommerce':'poster';var a=cat==='电商设计'?ecomImgs:posterImgs;return'images/'+f+'/'+a[i%a.length]}
+var works=[];try{var d=localStorage.getItem('pf_works');works=d?JSON.parse(d):DEFAULT_WORKS}catch(e){works=DEFAULT_WORKS}
+var selectedId=null,editingBlockIdx=null,toastTimer;
 
-function getDefaultWorks(){return[
-  {id:1,title:'OMEGA · 手表天猫详情页',category:'电商设计',client:'OMEGA旗舰店',price:'¥299',img:defImg('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'为 OMEGA 手表旗舰店设计天猫详情页，需要突出产品的高端质感与精密工艺。'},{t:'text',title:'设计思路',c:'采用深色基调配合金属质感元素，通过大图展示产品细节，营造奢华氛围。'}],specs:{'项目类型':'电商详情页','客户':'OMEGA旗舰店','价格':'¥299','服务内容':'页面规划 / 视觉设计 / 图文排版'}},
-  {id:2,title:'花西子 · 口红详情页',category:'电商设计',client:'花西子旗舰店',price:'¥299',img:defImg('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'花西子新品口红上市，需要一套完整的电商详情页设计，突出东方美学的品牌基因与产品特色。'}],specs:{'项目类型':'电商详情页','客户':'花西子旗舰店','价格':'¥299','服务内容':'视觉设计 / 精修排版 / 文案策划'}},
-  {id:3,title:'小米有品 · 家电详情页',category:'电商设计',client:'小米有品',price:'¥299',img:defImg('电商设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'小米有品智能家电新品上线，需要设计符合小米品牌调性的电商详情页，强调科技感与性价比。'}],specs:{'项目类型':'电商详情页','客户':'小米有品','价格':'¥299','服务内容':'页面设计 / 3D渲染 / 详情排版'}},
-  {id:4,title:'Nike · 跑步鞋详情页',category:'电商设计',client:'Nike旗舰店',price:'¥299',img:defImg('电商设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'Nike 新款跑鞋天猫详情页设计，需要突出产品的科技含量与运动性能，同时保持品牌一贯的动感调性。'}],specs:{'项目类型':'电商详情页','客户':'Nike旗舰店','价格':'¥299','服务内容':'视觉设计 / 动效设计 / 文案排版'}},
-  {id:5,title:'美的 · 空调详情页',category:'电商设计',client:'美的旗舰店',price:'¥299',img:defImg('电商设计',4),detail:[{t:'image'},{t:'text',title:'项目背景',c:'美的智能空调新品详情页设计，需要清晰传达产品的核心卖点与技术优势。'}],specs:{'项目类型':'电商详情页','客户':'美的旗舰店','价格':'¥299','服务内容':'页面设计 / 卖点策划 / ICON设计'}},
-  {id:6,title:'瑞幸 · 樱花季详情页',category:'电商设计',client:'瑞幸咖啡',price:'¥299',img:defImg('电商设计',5),detail:[{t:'image'},{t:'text',title:'项目背景',c:'瑞幸咖啡樱花季限定系列详情页设计，需要营造春日浪漫氛围，吸引女性消费群体。'}],specs:{'项目类型':'电商详情页','客户':'瑞幸咖啡','价格':'¥299','服务内容':'视觉设计 / 场景搭建 / 文案策划'}},
-  {id:7,title:'COLORKEY · 唇釉详情页',category:'电商设计',client:'COLORKEY旗舰店',price:'¥299',img:defImg('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'COLORKEY 新品唇釉系列详情页设计，针对Z世代消费群体，需要潮流感与视觉冲击力。'}],specs:{'项目类型':'电商详情页','客户':'COLORKEY旗舰店','价格':'¥299','服务内容':'视觉设计 / 模特精修 / 详情排版'}},
-  {id:8,title:'野兽派 · 香薰详情页',category:'电商设计',client:'野兽派旗舰店',price:'¥299',img:defImg('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'野兽派高端香薰系列详情页，需要营造沉浸式的感官体验，用视觉传达嗅觉的美感。'}],specs:{'项目类型':'电商详情页','客户':'野兽派旗舰店','价格':'¥299','服务内容':'视觉设计 / 场景拍摄 / 详情排版'}},
-  {id:9,title:'极光音乐节 · 海报系列',category:'海报设计',client:'极光音乐节',price:'¥299',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'极光音乐节是一年一度的户外音乐盛会，需要一套视觉冲击力强的海报系列用于线上线下宣传。'}],specs:{'项目类型':'海报设计','客户':'极光音乐节','价格':'¥299','服务内容':'主视觉 / 系列海报 / 动态海报'}},
-  {id:10,title:'京东618 · 活动主视觉',category:'海报设计',client:'京东',price:'¥299',img:defImg('海报设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'京东618年中大促活动主视觉设计，需要在众多促销信息中脱颖而出，传递狂欢氛围。'}],specs:{'项目类型':'活动主视觉','客户':'京东','价格':'¥299','服务内容':'主KV / 延展物料 / 会场设计'}},
-  {id:11,title:'双11 · 天猫主视觉',category:'海报设计',client:'天猫',price:'¥299',img:defImg('海报设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'天猫双11全球狂欢节主视觉设计，需要兼顾品牌调性与大促氛围，在线上线下多触点统一传达。'}],specs:{'项目类型':'活动主视觉','客户':'天猫','价格':'¥299','服务内容':'主KV / 会场设计 / 线下物料'}},
-  {id:12,title:'时光印记 · 摄影展海报',category:'海报设计',client:'城市美术馆',price:'¥299',img:defImg('海报设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'"时光印记"城市摄影展海报设计，需要在方寸之间传达展览的主题与艺术调性。'}],specs:{'项目类型':'海报设计','客户':'城市美术馆','价格':'¥299','服务内容':'主海报 / 系列海报 / 展览物料'}},
-  {id:13,title:'蔚来 · 新车发布海报',category:'海报设计',client:'蔚来汽车',price:'¥299',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'蔚来新款车型发布预热海报系列，需要在发布前通过视觉逐步揭开新车面纱，制造期待感。'}],specs:{'项目类型':'海报设计','客户':'蔚来汽车','价格':'¥299','服务内容':'预热海报 / 发布主视觉 / 社交媒体物料'}}
-]}
-
-// Load
-var works;
-try{var d=localStorage.getItem('pf_works');works=d?JSON.parse(d):DEFAULT_WORKS}catch(e){works=DEFAULT_WORKS}
-var selectedId=null,editingBlockIdx=null;
-var toastTimer;
-
-function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2000)}
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2000)}
 function save(){try{localStorage.setItem('pf_works',JSON.stringify(works));toast('已保存 ✓')}catch(e){toast('保存失败')};refreshList()}
-function downloadDataJS(){var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';var b=new Blob([js],{type:'application/javascript'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='data.js';a.click();toast('已下载 data.js，双击 deploy.bat 即可上线 ✓')}
+function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 
-// ====== Sidebar List ======
+// ====== Sidebar ======
 function refreshList(){
-  var list=document.getElementById('workList');
-  document.getElementById('workCount').textContent=works.length;
-  list.innerHTML=works.map(function(w){
-    var active=selectedId===w.id?' active':'';
-    return'<div class="work-list-item'+active+'" data-id="'+w.id+'" onclick="selectWork('+w.id+')">'+
-      '<div class="work-list-item-thumb"><img src="'+esc(w.img)+'" onerror="this.style.display=\'none\'"></div>'+
-      '<div class="work-list-item-info"><div class="work-list-item-title">'+esc(w.title)+'</div><div class="work-list-item-meta">'+esc(w.category)+' · '+esc(w.client||'')+'</div></div>'+
-      '<div class="work-list-item-del" onclick="event.stopPropagation();deleteWork('+w.id+')" title="删除">✕</div>'+
+  var l=document.getElementById('workList');
+  document.getElementById('workCount').textContent=works.length+' 件作品';
+  l.innerHTML=works.map(function(w){
+    var a=selectedId===w.id?' active':'';
+    var img=w.img||'';
+    return'<div class="work-item'+a+'" onclick="selectWork('+w.id+')">'+
+      '<div class="work-item-thumb">'+(img?'<img src="'+esc(img)+'" onerror="this.style.display=\'none\'">':'')+'</div>'+
+      '<div class="work-item-info"><div class="work-item-title">'+esc(w.title||'未命名')+'</div><div class="work-item-cat">'+esc(w.category||'')+(w.price?' · ¥'+esc(w.price):'')+'</div></div>'+
+      '<div class="work-item-del" onclick="event.stopPropagation();deleteWork('+w.id+')" title="删除">×</div>'+
     '</div>';
   }).join('');
 }
 
 function selectWork(id){selectedId=id;refreshList();renderEditor()}
-
 function addWork(){
   var maxId=0;works.forEach(function(w){if(w.id>maxId)maxId=w.id});
-  var w={id:maxId+1,title:'新作品',category:'电商设计',client:'',price:'¥299',img:'',detail:[{t:'image'},{t:'text',title:'项目背景',c:''}]};
-  works.unshift(w);save();selectedId=w.id;refreshList();renderEditor();toast('已创建新作品')
+  works.unshift({id:maxId+1,title:'新作品',category:'电商设计',client:'',price:'',img:'',detail:[],gallery:[],specs:{}});
+  save();selectedId=works[0].id;refreshList();renderEditor();toast('已创建')
 }
-
 function deleteWork(id){
-  if(!confirm('确定删除这个作品？'))return;
+  if(!confirm('删除？'))return;
   works=works.filter(function(w){return w.id!==id});
-  if(selectedId===id)selectedId=null;save();renderEditor();toast('已删除')
+  if(selectedId===id)selectedId=null;save();renderEditor();
 }
 
 // ====== Editor ======
 function renderEditor(){
-  var editor=document.getElementById('editor');
-  if(!selectedId){editor.innerHTML='<div class="editor-empty">← 选择或创建一个作品开始编辑</div>';return}
+  var ed=document.getElementById('editor');if(!selectedId){ed.innerHTML='<div class="editor-empty"><div>← 选择作品开始编辑</div><div style="font-size:12px;color:var(--text3)">或点击「+ 新建」</div></div>';return}
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-
-  var detailBlocks='';
-  for(var i=0;i<w.detail.length;i++){
-    var b=w.detail[i];
+  if(!w.detail)w.detail=[];if(!w.gallery)w.gallery=[];if(!w.specs)w.specs={};
+  // Gallery
+  var gHtml='';
+  if(w.gallery.length>0){
+    gHtml=w.gallery.map(function(s,i){
+      return'<div class="gallery-item'+(i===0?' cover':'')+'" onclick="setCover('+i+')" title="'+(i===0?'封面':'设为封面')+'">'+
+        '<img src="'+esc(s)+'"><div class="label">'+(i===0?'★ 封面':'')+'</div>'+
+        '<div class="del" onclick="event.stopPropagation();removeGallery('+i+')">×</div></div>';
+    }).join('');
+  }else{gHtml='<span style="font-size:11px;color:var(--text3)">暂无，请上传</span>'}
+  // Detail blocks
+  var blHtml='';
+  w.detail.forEach(function(b,i){
     if(b.t==='image'){
-      var hasSrc=b.src&&b.src.length>10;
-      detailBlocks+='<div class="block-item" draggable="true" data-idx="'+i+'">'+
-        '<div class="block-handle">⋮⋮</div><span class="block-type image">图片</span>'+
-        '<div class="block-preview" style="cursor:pointer" onclick="event.stopPropagation();editBlockImg('+i+')" title="点击更换图片">'+(hasSrc?('<img src="'+esc(b.src)+'">'):'<span style="font-size:11px;color:var(--text3)">（使用主图 — 点击上传专属图）</span>')+'</div>'+
-        '<div class="block-delete" onclick="deleteBlock('+i+')">✕</div></div>';
-    } else {
-      var txt=b.c||'';if(txt.length>30)txt=txt.substring(0,30)+'…';
-      detailBlocks+='<div class="block-item" draggable="true" data-idx="'+i+'">'+
-        '<div class="block-handle">⋮⋮</div><span class="block-type text">文字</span>'+
-        '<div class="block-preview"><b>'+esc(b.title||'')+'</b> '+esc(txt)+'</div>'+
-        '<div class="block-delete" onclick="deleteBlock('+i+')">✕</div></div>';
+      blHtml+='<div class="block-row" draggable="true" data-idx="'+i+'">'+
+        '<div class="block-handle">⋮⋮</div><span class="block-tag img">图片</span>'+
+        '<div class="block-preview" onclick="event.stopPropagation();editBlockImg('+i+')" title="点击替换">'+(b.src?('<img src="'+esc(b.src)+'">'):'点击上传图片')+'</div>'+
+        '<div class="block-del" onclick="deleteBlock('+i+')">×</div></div>';
+    }else{
+      var t=b.c||'';if(t.length>25)t=t.substring(0,25)+'…';
+      blHtml+='<div class="block-row" draggable="true" data-idx="'+i+'">'+
+        '<div class="block-handle">⋮⋮</div><span class="block-tag txt">文字</span>'+
+        '<div class="block-preview"><b>'+esc(b.title||'')+'</b> '+esc(t)+'</div>'+
+        '<div class="block-del" onclick="deleteBlock('+i+')">×</div></div>';
     }
-  }
+  });
+  if(!blHtml)blHtml='<span style="font-size:11px;color:var(--text3)">暂无详情模块，点击下方添加</span>';
 
-  editor.innerHTML=
-    '<div class="editor-section">'+
-      '<h3>基本信息</h3>'+
+  ed.innerHTML='<div class="editor-grid">'+
+    '<div class="card"><h3>基本信息</h3>'+
       '<div class="form-row">'+
-        '<div class="form-group" style="flex:2"><label>作品名称</label><input value="'+esc(w.title)+'" id="edTitle"></div>'+
-        '<div class="form-group"><label>分类</label><select id="edCat"><option value="电商设计"'+(w.category==='电商设计'?' selected':'')+'>电商设计</option><option value="海报设计"'+(w.category==='海报设计'?' selected':'')+'>海报设计</option></select></div>'+
+        '<div class="fg" style="flex:2"><label>作品名称</label><input value="'+esc(w.title||'')+'" id="edTitle"></div>'+
+        '<div class="fg"><label>分类</label><select id="edCat"><option value="电商设计"'+(w.category==='电商设计'?' selected':'')+'>电商设计</option><option value="海报设计"'+(w.category==='海报设计'?' selected':'')+'>海报设计</option></select></div>'+
+        '<div class="fg"><label>价格</label><input value="'+esc(w.price||'')+'" id="edPrice" placeholder="如 299"></div>'+
       '</div>'+
       '<div class="form-row">'+
-        '<div class="form-group"><label>客户</label><input value="'+esc(w.client||'')+'" id="edClient"></div>'+
-        '<div class="form-group"><label>价格</label><input value="'+esc(w.price||'')+'" id="edPrice" placeholder="如 ¥299"></div>'+
-      '</div>'+
-      '<div class="form-row">'+
-        '<div class="form-group"><label>主图（缩略图）</label>'+
-          '<div class="thumb-upload" id="thumbUpload" onclick="document.getElementById(\'thumbInput\').click()">'+
-            (w.img?'<img src="'+esc(w.img)+'">':'<span class="placeholder">点击上传<br>或拖拽图片</span>')+
+        '<div class="fg"><label>客户</label><input value="'+esc(w.client||'')+'" id="edClient"></div>'+
+        '<div class="fg"><label>封面缩略图</label>'+
+          '<div class="thumb-zone" id="thumbZone" onclick="document.getElementById(\'thumbInput\').click()">'+
+            (w.img?'<img src="'+esc(w.img)+'">':'<span class="ph">点击上传<br>或拖拽</span>')+
           '</div>'+
         '</div>'+
-        '<div class="form-group"><label>操作</label><br>'+
-          '<button class="btn btn-outline" onclick="openPreview()">预览详情页</button>'+
-        '</div>'+
       '</div>'+
     '</div>'+
-    '<div class="editor-section">'+
-      '<h3>主图集（可用于轮播，第一张为封面）</h3>'+
-      '<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory" id="galleryThumbs">'+
-        (!w.gallery||w.gallery.length===0?('<span style="font-size:12px;color:var(--text3);flex-shrink:0;padding:20px">暂无主图，请上传</span>'):'')+
-        (w.gallery||[]).map(function(src,i){return'<div style="position:relative;flex-shrink:0;width:100px;height:100px;border-radius:12px;overflow:hidden;cursor:pointer;border:3px solid '+(i===0?'var(--accent)':'rgba(0,0,0,.06)')+';scroll-snap-align:start;transition:border .2s" onclick="setCover('+i+')" title="'+(i===0?'当前封面':'点击设为封面')+'">'+
-          '<img src="'+esc(src)+'" style="width:100%;height:100%;object-fit:cover">'+
-          '<div style="position:absolute;bottom:0;left:0;right:0;background:'+(i===0?'var(--accent)':'rgba(0,0,0,.55)')+';color:#fff;font-size:10px;text-align:center;padding:4px;font-weight:'+(i===0?'600':'400')+'">'+(i===0?'★ 封面':'点击设封面')+'</div>'+
-          '<div style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer" onclick="event.stopPropagation();removeGalleryImg('+i+')">✕</div>'+
-        '</div>'}).join('')+
-      '</div>'+
-      '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'galleryInput\').click()">+ 上传主图</button>'+
-      '<p style="font-size:11px;color:var(--text3);margin-top:6px">← 左右滑动查看 · 点击图片设为封面 · 封面同步为缩略图</p>'+
+    '<div class="card"><h3>主图集（轮播）</h3>'+
+      '<div class="gallery-strip" id="galleryStrip">'+gHtml+'</div>'+
+      '<button class="btn btn-o" style="margin-top:6px" onclick="document.getElementById(\'galleryInput\').click()">+ 上传主图</button>'+
+      '<span style="font-size:10px;color:var(--text3);margin-left:8px">首张为封面，点击设封面</span>'+
     '</div>'+
-    '<div class="editor-section">'+
-      '<h3>详情内容模块（淘宝式下滑详情）</h3>'+
-      '<div class="blocks-list">'+detailBlocks+'</div>'+
-      '<div class="block-add-row">'+
-        '<button class="btn btn-outline" onclick="addBlock(\'image\')">+ 添加图片模块</button>'+
-        '<button class="btn btn-outline" onclick="addBlock(\'text\')">+ 添加文字模块</button>'+
+    '<div class="card"><h3>详情模块（下滑长图）</h3>'+
+      '<div class="block-list" id="blockList">'+blHtml+'</div>'+
+      '<div class="block-add">'+
+        '<button class="btn btn-o" onclick="addBlock(\'image\')">+ 图片</button>'+
+        '<button class="btn btn-o" onclick="addBlock(\'text\')">+ 文字</button>'+
       '</div>'+
-      '<p style="font-size:11px;color:var(--text3);margin-top:8px">拖拽模块可排序 · 点击 ✕ 删除 · 点击图片可重新上传</p>'+
     '</div>'+
-    '<div style="display:flex;gap:10px">'+
-      '<button class="btn btn-primary" onclick="saveEditor()">保存</button>'+
-      '<button class="btn btn-primary" style="background:#e53935" onclick="deployToGitHub()">🚀 上线</button>'+
-      '<button class="btn btn-outline" onclick="openPreview()">预览</button>'+
-    '</div>';
-
-  attachBlockDrag();
-  setupThumbDrop();
+    '<div style="display:flex;gap:8px">'+
+      '<button class="btn btn-p" onclick="saveEditor()">保存</button>'+
+      '<button class="btn btn-g" onclick="deployToGitHub()">🚀 上线</button>'+
+      '<button class="btn btn-o" onclick="openPreview()">预览</button>'+
+    '</div>'+
+  '</div>';
+  attachDrag();setupThumb();
 }
 
 function saveEditor(){
@@ -352,35 +367,37 @@ function saveEditor(){
   w.category=document.getElementById('edCat').value;
   w.client=document.getElementById('edClient').value;
   w.price=document.getElementById('edPrice').value;
-  if(w.specs){w.specs['客户']=w.client;w.specs['价格']=w.price}
-  // Sync cover from gallery
-  if(w.gallery&&w.gallery.length>0)w.img=w.gallery[0];
   save();renderEditor();toast('已保存 ✓')
 }
 
-function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
-
-// ====== Thumbnail Upload ======
+// ====== Image Upload ======
 document.getElementById('thumbInput').addEventListener('change',function(){
   if(!this.files||!this.files[0])return;
+  resizeImage(this.files[0],function(b64){
+    var w=works.find(function(x){return x.id===selectedId});if(!w)return;
+    w.img=b64;renderEditor();save();toast('封面已更新')
+  });this.value='';
+});
+document.getElementById('galleryInput').addEventListener('change',function(){
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  resizeImage(this.files[0],function(b64){w.img=b64;renderEditor();save()});
-  this.value='';
+  if(!w.gallery)w.gallery=[];
+  var files=this.files,loaded=0;
+  function next(i){if(i>=files.length){renderEditor();save();toast('已上传 '+loaded+' 张');return}
+    resizeImage(files[i],function(b64){w.gallery.push(b64);if(w.gallery.length===1)w.img=b64;loaded++;next(i+1)});}
+  next(0);this.value='';
+});
+document.getElementById('blockImgInput').addEventListener('change',function(){
+  if(!this.files||!this.files[0])return;
+  resizeImage(this.files[0],function(b64){
+    var w=works.find(function(x){return x.id===selectedId});if(!w)return;
+    if(editingBlockIdx!==null&&editingBlockIdx<w.detail.length&&w.detail[editingBlockIdx].t==='image'){w.detail[editingBlockIdx].src=b64}
+    else{w.detail.splice(editingBlockIdx!==null?editingBlockIdx:w.detail.length,0,{t:'image',src:b64})}
+    renderEditor();save();toast('详情图已添加')
+  });this.value='';
 });
 
-function setupThumbDrop(){
-  var el=document.getElementById('thumbUpload');if(!el)return;
-  el.addEventListener('dragover',function(e){e.preventDefault();el.style.borderColor='var(--accent)'});
-  el.addEventListener('dragleave',function(){el.style.borderColor=''});
-  el.addEventListener('drop',function(e){e.preventDefault();el.style.borderColor='';
-    var w=works.find(function(x){return x.id===selectedId});if(!w||!e.dataTransfer.files[0])return;
-    resizeImage(e.dataTransfer.files[0],function(b64){w.img=b64;renderEditor();save()});
-  });
-}
-
 function resizeImage(file,cb){
-  var reader=new FileReader();
-  reader.onload=function(e){
+  var reader=new FileReader();reader.onload=function(e){
     var img=new Image();img.onload=function(){
       var w=img.naturalWidth,h=img.naturalHeight,max=1200;
       if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max}else{w=Math.round(w*max/h);h=max}}
@@ -389,65 +406,39 @@ function resizeImage(file,cb){
     };img.src=e.target.result;
   };reader.readAsDataURL(file);
 }
-
-// ====== Detail Blocks ======
-function addBlock(type){
-  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  if(type==='image'){
-    editingBlockIdx=w.detail.length;
-    document.getElementById('blockImgInput').click();
-  } else {
-    w.detail.push({t:'text',title:'新段落',c:''});
-    renderEditor();save();
-  }
+function setupThumb(){
+  var el=document.getElementById('thumbZone');if(!el)return;
+  el.addEventListener('dragover',function(e){e.preventDefault();el.style.borderColor='var(--accent)'});
+  el.addEventListener('dragleave',function(){el.style.borderColor=''});
+  el.addEventListener('drop',function(e){e.preventDefault();el.style.borderColor='';
+    if(!e.dataTransfer.files[0])return;
+    resizeImage(e.dataTransfer.files[0],function(b64){
+      var w=works.find(function(x){return x.id===selectedId});if(!w)return;
+      w.img=b64;renderEditor();save();toast('封面已更新')
+    });
+  });
 }
 
-document.getElementById('blockImgInput').addEventListener('change',function(){
-  if(!this.files||!this.files[0])return;
-  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  var idx=editingBlockIdx;
-  resizeImage(this.files[0],function(b64){
-    if(idx<w.detail.length&&w.detail[idx].t==='image'){w.detail[idx].src=b64}
-    else {w.detail.splice(idx,0,{t:'image',src:b64})}
-    renderEditor();save();toast('图片模块已添加 ✓')
-  });
-  this.value='';
-});
-
-function editBlockImg(idx){editingBlockIdx=idx;document.getElementById('blockImgInput').click()}
-
-// Gallery management
-document.getElementById('galleryInput').addEventListener('change',function(){
-  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  if(!w.gallery)w.gallery=[];
-  var files=this.files;if(!files||files.length===0)return;
-  var loaded=0;
-  function loadNext(idx){
-    if(idx>=files.length){renderEditor();save();toast('已上传 '+loaded+' 张主图');return}
-    resizeImage(files[idx],function(b64){w.gallery.push(b64);loaded++;loadNext(idx+1)});
-  }
-  loadNext(0);this.value='';
-});
-
+// ====== Gallery ======
 function setCover(i){
   var w=works.find(function(x){return x.id===selectedId});if(!w||!w.gallery)return;
-  var img=w.gallery.splice(i,1)[0];w.gallery.unshift(img);
-  w.img=img;renderEditor();save();toast('已设为封面')
+  var img=w.gallery.splice(i,1)[0];w.gallery.unshift(img);w.img=img;renderEditor();save();toast('已设为封面')
 }
-function removeGalleryImg(i){
+function removeGallery(i){
   var w=works.find(function(x){return x.id===selectedId});if(!w||!w.gallery)return;
-  w.gallery.splice(i,1);if(i===0&&w.gallery.length>0)w.img=w.gallery[0];
-  renderEditor();save();
+  w.gallery.splice(i,1);if(i===0&&w.gallery.length>0)w.img=w.gallery[0];renderEditor();save();
 }
 
-function deleteBlock(idx){
+// ====== Blocks ======
+function addBlock(type){
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  w.detail.splice(idx,1);renderEditor();save();
+  if(type==='image'){editingBlockIdx=w.detail.length;document.getElementById('blockImgInput').click()}
+  else{w.detail.push({t:'text',title:'新段落',c:''});renderEditor();save()}
 }
-
-function attachBlockDrag(){
-  var items=document.querySelectorAll('.block-item');
-  var dragIdx=null;
+function editBlockImg(i){editingBlockIdx=i;document.getElementById('blockImgInput').click()}
+function deleteBlock(i){var w=works.find(function(x){return x.id===selectedId});if(!w)return;w.detail.splice(i,1);renderEditor();save()}
+function attachDrag(){
+  var items=document.querySelectorAll('.block-row');var dragIdx=null;
   items.forEach(function(item){
     item.addEventListener('dragstart',function(e){dragIdx=parseInt(item.dataset.idx);item.classList.add('dragging');e.dataTransfer.effectAllowed='move'});
     item.addEventListener('dragend',function(){item.classList.remove('dragging')});
@@ -455,8 +446,7 @@ function attachBlockDrag(){
     item.addEventListener('drop',function(e){e.preventDefault();
       var toIdx=parseInt(item.dataset.idx);if(dragIdx===null||dragIdx===toIdx)return;
       var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-      var moved=w.detail.splice(dragIdx,1)[0];w.detail.splice(toIdx,0,moved);
-      renderEditor();save();
+      var moved=w.detail.splice(dragIdx,1)[0];w.detail.splice(toIdx,0,moved);renderEditor();save();
     });
   });
 }
@@ -464,50 +454,28 @@ function attachBlockDrag(){
 // ====== Preview ======
 function openPreview(){
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  var pc=document.getElementById('previewContent');
-  var html='<button class="preview-close" onclick="closePreview()">✕</button>';
-  html+='<img class="preview-img" src="'+esc(w.img)+'">';
-  html+='<div class="preview-info"><div class="cat">'+esc(w.category)+'</div><h2>'+esc(w.title)+'</h2>';
+  var p=document.getElementById('previewPanel');
+  var h='<button class="preview-close" onclick="closePreview()">×</button>';
+  var img=w.img;if(w.gallery&&w.gallery.length>0)img=w.gallery[0];
+  h+='<img class="preview-hero" src="'+esc(img)+'">';
+  h+='<div class="preview-info"><div class="cat">'+esc(w.category||'')+'</div><h4>'+esc(w.title||'')+'</h4>';
+  if(w.price)h+='<div class="price">¥'+esc(w.price)+'</div>';
   var desc='';for(var i=0;i<w.detail.length;i++){if(w.detail[i].t==='text'){desc=w.detail[i].c;break}}
-  html+='<p class="desc">'+esc(desc)+'</p></div>';
-  html+='<div class="preview-blocks">';
-  for(var i=0;i<w.detail.length;i++){
-    var b=w.detail[i];
-    if(b.t==='image'){
-      var src=b.src||w.img;
-      html+='<img src="'+esc(src)+'">';
-    } else if(b.t==='text'&&b.title){
-      html+='<div class="text-block"><h3>'+esc(b.title)+'</h3><p>'+esc(b.c||'')+'</p></div>';
+  h+='<p class="desc">'+esc(desc)+'</p></div>';
+  if(w.detail.length>0){
+    h+='<div class="preview-blocks">';
+    for(var i=0;i<w.detail.length;i++){
+      var b=w.detail[i];
+      if(b.t==='image')h+='<img src="'+esc(b.src||img)+'">';
+      else if(b.t==='text'&&b.title)h+='<div style="padding:16px 20px"><div class="t">'+esc(b.title)+'</div><div class="p">'+esc(b.c||'')+'</div></div>';
     }
+    h+='</div>';
   }
-  html+='</div>';
-  pc.innerHTML=html;
-  document.getElementById('previewModal').classList.add('open');
+  p.innerHTML=h;document.getElementById('previewOverlay').classList.add('open');
 }
-function closePreview(){document.getElementById('previewModal').classList.remove('open')}
+function closePreview(){document.getElementById('previewOverlay').classList.remove('open')}
 
-// ====== Export / Import / Reset ======
-function copyData(){
-  save();
-  var data=JSON.stringify(works);
-  navigator.clipboard.writeText(data).then(function(){
-    toast('已复制！粘贴发给助手即可上线 ✓');
-  }).catch(function(){
-    // Fallback for older browsers
-    var ta=document.createElement('textarea');ta.value=data;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-    toast('已复制！粘贴发给助手即可上线 ✓');
-  });
-}
-
-function exportData(){
-  var blob=new Blob([JSON.stringify(works,null,2)],{type:'application/json'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='portfolio-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('已导出')
-}
-function importData(){
-  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
-  inp.onchange=function(){if(!this.files[0])return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(!Array.isArray(d))throw new Error('');works=d;selectedId=null;save();renderEditor();toast('已导入 '+d.length+' 件作品')}catch(err){toast('格式错误')}};r.readAsText(this.files[0])};inp.click();
-}
+// ====== Deploy ======
 function deployToGitHub(){
   save();
   if(typeof GITHUB_TOKEN==='undefined'){toast('token.js 缺失');return}
@@ -529,24 +497,30 @@ function deployToGitHub(){
       put.setRequestHeader('Authorization','token '+GITHUB_TOKEN);
       put.setRequestHeader('Accept','application/vnd.github.v3+json');
       put.setRequestHeader('Content-Type','application/json');
-      put.onload=function(){
-        if(put.status===200||put.status===201)toast('✓ 已上线')
-        else toast('失败: '+put.status)
-      };
+      put.onload=function(){if(put.status===200||put.status===201)toast('✓ 已上线！');else toast('失败: '+put.status)};
       put.send(body);
-    }else toast('网络错误: '+xhr.status)
+    }else toast('网络错误')
   };
   xhr.send();
 }
 
+// ====== Export / Import / Reset ======
+function exportData(){
+  var blob=new Blob([JSON.stringify(works,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='portfolio-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('已导出')
+}
+function importData(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(){if(!this.files[0])return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(!Array.isArray(d))throw new Error('');works=d;selectedId=null;save();renderEditor();toast('已导入 '+d.length+' 件')}catch(err){toast('格式错误')}};r.readAsText(this.files[0])};inp.click();
+}
 function resetAll(){
-  if(!confirm('确定恢复默认数据？所有修改将丢失。'))return;
-  works=DEFAULT_WORKS.slice();selectedId=null;try{localStorage.removeItem('pf_works')}catch(e){}save();renderEditor();toast('已恢复默认')
+  if(!confirm('确定恢复默认数据？'))return;
+  works=DEFAULT_WORKS.slice();selectedId=null;try{localStorage.removeItem('pf_works')}catch(e){}save();renderEditor();toast('已重置')
 }
 
 // ====== Init ======
-refreshList();
-renderEditor();
+refreshList();renderEditor();
 </script>
 </body>
 </html>
