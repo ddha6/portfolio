@@ -329,13 +329,20 @@ body::after{
 .detail-body{max-width:900px;margin:0 auto;padding:32px 24px 80px;transition:opacity .25s,transform .25s cubic-bezier(.22,1,.36,1)}
 .detail-body.swipe-out-left{opacity:0;transform:translate3d(-60px,0,0)}
 .detail-body.swipe-out-right{opacity:0;transform:translate3d(60px,0,0)}
-.detail-hero-image{
-  width:100%;max-width:80%;margin-left:auto;margin-right:auto;
-  background:#e8e6e2;border-radius:var(--radius-lg);
-  overflow:hidden;margin-bottom:40px;contain:layout paint;
-  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
-}
-.detail-hero-image img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.detail-hero{width:100%;max-width:80%;margin:0 auto 40px;position:relative}
+.detail-hero-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;border-radius:var(--radius-lg);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow)}
+.detail-hero-track::-webkit-scrollbar{display:none}
+.detail-hero-slide{flex:0 0 100%;scroll-snap-align:start;position:relative;aspect-ratio:3/4;background:#e8e6e2;overflow:hidden}
+.detail-hero-slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.detail-hero-dots{display:flex;justify-content:center;gap:6px;margin-top:12px}
+.detail-hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.15);transition:all .3s}
+.detail-hero-dot.active{background:var(--accent);width:18px;border-radius:3px}
+.detail-hero-arrows{display:flex}
+.detail-hero-arrow{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:all .25s;color:var(--text-secondary)}
+.detail-hero-arrow:hover{background:#fff;color:var(--text)}
+.detail-hero-arrow.prev{left:10px}
+.detail-hero-arrow.next{right:10px}
+.detail-hero-arrow svg{width:18px;height:18px}
 .detail-title-section{margin-bottom:44px}
 .detail-category{font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:10px}
 .detail-title{font-size:clamp(26px,4vw,38px);font-weight:350;letter-spacing:-.02em;line-height:1.2;margin-bottom:14px}
@@ -350,8 +357,8 @@ body::after{
 
 .detail-content-blocks{display:flex;flex-direction:column;gap:0}
 .detail-block-image{
-  margin-bottom:8px;border-radius:var(--radius-lg);overflow:hidden;
-  background:#e8e6e2;border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  margin-bottom:0;border-radius:0;overflow:hidden;
+  background:#e8e6e2;
   opacity:0;transform:translateY(20px);
   transition:opacity .55s,transform .55s var(--ease-out);
 }
@@ -509,7 +516,7 @@ body::after{
   .detail-header{width:calc(100% - 16px);padding:0 16px;height:46px;top:8px}
   .detail-back{font-size:12px}
   .detail-body{padding:24px 16px 48px}
-  .detail-hero-image{max-width:100%}
+  .detail-hero{max-width:100%}
   .detail-bottom-nav{max-width:95vw}
 }
 </style>
@@ -773,16 +780,54 @@ filterList.addEventListener('click',e=>{
 
 function openDetail(id){
   const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
+  // Collect images for carousel: main img + detail image blocks
+  const carouselImgs=[w.img];
+  w.detail.forEach(b=>{if(b.t==='image'&&b.src&&b.src.length>10)carouselImgs.push(b.src)});
   let html='';
-  if(w.detail[0]&&w.detail[0].t==='image')html+=`<div class="detail-hero-image" style="aspect-ratio:3/4"><img src="${w.img}" alt="${w.title}"></div>`;
+  if(carouselImgs.length>0){
+    html+=`<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">`;
+    carouselImgs.forEach((src,i)=>{
+      html+=`<div class="detail-hero-slide"><img src="${src}" alt="${w.title}"></div>`;
+    });
+    html+=`</div>`;
+    if(carouselImgs.length>1){
+      html+=`<div class="detail-hero-dots" id="heroDots">`;
+      carouselImgs.forEach((_,i)=>html+=`<div class="detail-hero-dot${i===0?' active':''}" data-idx="${i}"></div>`);
+      html+=`</div>`;
+      html+=`<div class="detail-hero-arrows"><button class="detail-hero-arrow prev" id="heroPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><button class="detail-hero-arrow next" id="heroNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>`;
+    }
+    html+=`</div>`;
+  }
   html+=`<div class="detail-title-section"><div class="detail-category">${w.category}</div><h2 class="detail-title">${w.title}</h2><p class="detail-desc">${w.detail.find(d=>d.t==='text')?.c||''}</p></div>`;
   html+='<div class="detail-meta">';
   for(const[k,v]of Object.entries(w.specs))html+=`<div class="detail-meta-item"><div class="detail-meta-label">${k}</div><div class="detail-meta-value">${v}</div></div>`;
   html+='</div>';
   let sH=false,sFT=false;html+='<div class="detail-content-blocks">';
-  w.detail.forEach(b=>{if(b.t==='image'&&!sH){sH=true;return}if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${w.img}" alt="${w.title}" loading="lazy"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
+  w.detail.forEach(b=>{if(b.t==='image'&&!sH){sH=true;return}if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${b.src||w.img}" alt="${w.title}" loading="lazy"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
   html+='</div>';
   detailBody.innerHTML=html;detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';updateDetailNav();
+  // Carousel logic
+  if(carouselImgs.length>1){
+    const track=document.getElementById('heroTrack'),dots=document.querySelectorAll('#heroDots .detail-hero-dot');
+    let curSlide=0;
+    function goSlide(i){
+      curSlide=i;track.scrollTo({left:track.clientWidth*i,behavior:'smooth'});
+      dots.forEach((d,j)=>d.classList.toggle('active',j===i));
+    }
+    document.getElementById('heroPrev').onclick=()=>{if(curSlide>0)goSlide(curSlide-1)};
+    document.getElementById('heroNext').onclick=()=>{if(curSlide<carouselImgs.length-1)goSlide(curSlide+1)};
+    dots.forEach(d=>d.onclick=()=>goSlide(parseInt(d.dataset.idx)));
+    track.addEventListener('scroll',()=>{
+      const i=Math.round(track.scrollLeft/track.clientWidth);
+      if(i!==curSlide){curSlide=i;dots.forEach((d,j)=>d.classList.toggle('active',j===i))}
+    });
+    // Keyboard arrows for hero carousel
+    document.addEventListener('keydown',function heroKey(e){
+      if(!detailOverlay.classList.contains('open'))return;
+      if(e.key==='ArrowLeft')goSlide(Math.max(0,curSlide-1));
+      if(e.key==='ArrowRight')goSlide(Math.min(carouselImgs.length-1,curSlide+1));
+    });
+  }
   requestAnimationFrame(()=>{const blocks=detailBody.querySelectorAll('[data-reveal]');const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})},{threshold:.08,rootMargin:'0px 0px -32px 0px'});blocks.forEach(b=>obs.observe(b))});
 }
 

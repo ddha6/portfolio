@@ -269,9 +269,10 @@ function renderEditor(){
   for(var i=0;i<w.detail.length;i++){
     var b=w.detail[i];
     if(b.t==='image'){
+      var hasSrc=b.src&&b.src.length>10;
       detailBlocks+='<div class="block-item" draggable="true" data-idx="'+i+'">'+
         '<div class="block-handle">⋮⋮</div><span class="block-type image">图片</span>'+
-        '<div class="block-preview">'+(b.src?('<img src="'+esc(b.src)+'">'):'（使用主图）')+'</div>'+
+        '<div class="block-preview" style="cursor:pointer" onclick="event.stopPropagation();editBlockImg('+i+')" title="点击更换图片">'+(hasSrc?('<img src="'+esc(b.src)+'">'):'<span style="font-size:11px;color:var(--text3)">（使用主图 — 点击上传专属图）</span>')+'</div>'+
         '<div class="block-delete" onclick="deleteBlock('+i+')">✕</div></div>';
     } else {
       var txt=b.c||'';if(txt.length>30)txt=txt.substring(0,30)+'…';
@@ -388,6 +389,7 @@ document.getElementById('blockImgInput').addEventListener('change',function(){
   this.value='';
 });
 
+function editBlockImg(idx){editingBlockIdx=idx;document.getElementById('blockImgInput').click()}
 function deleteBlock(idx){
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
   w.detail.splice(idx,1);renderEditor();save();
