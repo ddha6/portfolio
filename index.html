@@ -283,11 +283,16 @@ body::after{
   box-shadow:var(--glass-shadow-lg);
 }
 .detail-header::after{content:'';position:absolute;top:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);pointer-events:none}
+.detail-title-inline{
+  font-size:14px;font-weight:520;letter-spacing:-.01em;
+  position:absolute;left:50%;transform:translateX(-50%);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%;
+}
 .detail-back{
-  display:flex;align-items:center;gap:6px;
+  display:flex;align-items:center;gap:4px;
   font-size:13px;font-weight:480;color:var(--text-secondary);
-  padding:7px 14px;border-radius:100px;
-  transition:all .25s;position:relative;z-index:1;
+  padding:7px 12px;border-radius:100px;
+  transition:all .25s;position:relative;z-index:1;flex-shrink:0;
 }
 .detail-back:hover{color:var(--text);background:rgba(0,0,0,.04)}
 .detail-back svg{width:16px;height:16px;transition:transform .3s}
@@ -304,7 +309,7 @@ body::after{
 .detail-counter{
   font-size:12px;font-weight:450;color:var(--text-tertiary);
   letter-spacing:.04em;font-variant-numeric:tabular-nums;font-family:'Inter',monospace;
-  position:relative;z-index:1;
+  position:relative;z-index:1;flex-shrink:0;
 }
 
 .detail-back-to-top{
@@ -359,17 +364,27 @@ body::after{
 .detail-block-text p{font-size:14px;color:var(--text-secondary);line-height:1.85;max-width:560px}
 
 .detail-bottom-nav{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:40px 0;border-top:1px solid rgba(0,0,0,.05);margin-top:48px;
+  display:flex;justify-content:center;align-items:center;gap:0;
+  padding:40px 24px 64px;margin-top:48px;
 }
-.detail-bottom-link{
-  font-size:12px;font-weight:500;letter-spacing:.03em;
+.detail-bottom-nav .detail-bottom-link{
+  font-size:13px;font-weight:500;letter-spacing:.03em;
   color:var(--text-secondary);
   display:flex;align-items:center;gap:6px;
-  padding:8px 18px;border-radius:100px;
+  padding:10px 22px;
   transition:all .25s;
 }
-.detail-bottom-link:hover{color:var(--text);background:rgba(0,0,0,.03)}
+.detail-bottom-nav .detail-bottom-link:first-child{border-radius:100px 0 0 100px}
+.detail-bottom-nav .detail-bottom-link:last-child{border-radius:0 100px 100px 0}
+.detail-bottom-nav .detail-bottom-link:hover{color:var(--text);background:rgba(0,0,0,.03)}
+.detail-nav-divider{width:1px;height:18px;background:rgba(0,0,0,.08);flex-shrink:0}
+/* glass pill container for bottom nav */
+.detail-bottom-nav{
+  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid var(--glass-border-strong);border-radius:100px;
+  box-shadow:var(--glass-shadow);display:inline-flex;
+  margin:48px auto 0;width:auto;max-width:90vw;
+}
 
 /* ============================================
    Footer
@@ -466,19 +481,24 @@ body::after{
   .detail-header{width:calc(100% - 32px);top:10px}
 }
 @media(max-width:640px){
-  .gallery{column-count:2;column-gap:10px;padding:0 12px 40px}
+  .gallery{column-count:2;column-gap:8px;padding:0 10px 40px}
+  .gallery .work-card{margin-bottom:8px;break-inside:avoid}
+  .work-card-info{padding:10px 12px 10px}
+  .work-card-title{font-size:13px}
+  .work-card-category{font-size:9.5px}
+  .work-card-year{font-size:10px}
   .gallery .work-card{margin-bottom:14px}
   .nav{width:calc(100% - 20px);padding:0 16px;height:46px;top:10px}
   .nav-links a{font-size:12px;padding:6px 12px}
   .hero{padding:96px 16px 24px;gap:20px}
   .hero-title{font-size:28px}
   .hero-desc{font-size:13px}
-  .avatar-card{flex-direction:column;align-items:center;text-align:center;padding:20px 18px;gap:10px}
-  .avatar-card>*{flex-shrink:0;margin:0 auto}
+  .avatar-card{flex-direction:row;gap:16px;padding:20px 26px;text-align:left;align-items:center;flex-wrap:wrap}
+  .avatar-card>*{flex-shrink:0}
   .avatar-img{width:56px;height:56px}
-  .avatar-name{font-size:16px}
-  .avatar-role{margin-top:-6px;font-size:12px}
-  .avatar-email{font-size:11px;color:var(--text-secondary)}
+  .avatar-name{font-size:15px}
+  .avatar-role{margin:0;font-size:12px}
+  .avatar-email{font-size:12px;color:var(--text-secondary)}
   .filter-section{padding:0 16px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .filter-list{flex-wrap:nowrap}
   .filter-btn{white-space:nowrap;font-size:11px;padding:8px 16px}
@@ -486,7 +506,7 @@ body::after{
   .detail-header{width:calc(100% - 16px);padding:0 16px;height:46px;top:8px}
   .detail-back{font-size:12px}
   .detail-body{padding:24px 16px 48px}
-  .detail-bottom-nav{flex-direction:column;gap:12px}
+  .detail-bottom-nav{max-width:95vw}
 }
 </style>
 </head>
@@ -538,22 +558,20 @@ body::after{
 <!-- Detail Overlay -->
 <div class="detail-overlay" id="detailOverlay">
   <div class="detail-header">
-    <button class="detail-back" id="detailBack">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>返回
-    </button>
     <span class="detail-counter" id="detailCounter"></span>
-    <div class="detail-nav-actions">
-      <button class="detail-nav-btn" id="detailPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-      <button class="detail-nav-btn" id="detailNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
-    </div>
+    <span class="detail-title-inline" id="detailTitleInline"></span>
+    <button class="detail-back" id="detailBack">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>
+    </button>
   </div>
   <div class="detail-body" id="detailBody"></div>
-  <div class="detail-bottom-nav" style="max-width:900px;margin:0 auto;padding:40px 24px 64px">
+  <div class="detail-bottom-nav">
     <button class="detail-bottom-link" id="detailPrevBottom">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>上一个作品
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 12H5m0 0l7 7m-7-7l7-7"/></svg>上一个
     </button>
+    <span class="detail-nav-divider"></span>
     <button class="detail-bottom-link" id="detailNextBottom">
-      下一个作品<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M9 18l6-6-6-6"/></svg>
+      下一个<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M9 18l6-6-6-6"/></svg>
     </button>
   </div>
   <button class="detail-back-to-top" id="detailBackToTop">
@@ -711,9 +729,9 @@ let works = (()=>{
 let activeFilter='all',currentWorkId=null,lastScrollY=0;
 const galleryEl=document.getElementById('gallery'),filterList=document.getElementById('filterList'),
   detailOverlay=document.getElementById('detailOverlay'),detailBody=document.getElementById('detailBody'),
-  detailBack=document.getElementById('detailBack'),detailPrev=document.getElementById('detailPrev'),
-  detailNext=document.getElementById('detailNext'),detailPrevBottom=document.getElementById('detailPrevBottom'),
+  detailBack=document.getElementById('detailBack'),detailPrevBottom=document.getElementById('detailPrevBottom'),
   detailNextBottom=document.getElementById('detailNextBottom'),detailCounter=document.getElementById('detailCounter'),
+  detailTitleInline=document.getElementById('detailTitleInline'),
   detailBackToTop=document.getElementById('detailBackToTop'),nav=document.getElementById('nav');
 
 function renderGallery(filter){
@@ -765,13 +783,13 @@ function openDetail(id){
 }
 
 function closeDetail(){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBackToTop.classList.remove('visible')}
-function updateDetailNav(){const idx=works.findIndex(w=>w.id===currentWorkId);const p=idx>0,n=idx<works.length-1;[detailPrev,detailPrevBottom].forEach(el=>{el.style.opacity=p?'1':'.35';el.style.pointerEvents=p?'auto':'none'});[detailNext,detailNextBottom].forEach(el=>{el.style.opacity=n?'1':'.35';el.style.pointerEvents=n?'auto':'none'});detailCounter.textContent=`${String(idx+1).padStart(2,'0')} / ${String(works.length).padStart(2,'0')}`}
+function updateDetailNav(){const idx=works.findIndex(w=>w.id===currentWorkId);const w=works[idx];const p=idx>0,n=idx<works.length-1;detailPrevBottom.style.opacity=p?'1':'.35';detailPrevBottom.style.pointerEvents=p?'auto':'none';detailNextBottom.style.opacity=n?'1':'.35';detailNextBottom.style.pointerEvents=n?'auto':'none';detailCounter.textContent=`${String(idx+1).padStart(2,'0')} / ${String(works.length).padStart(2,'0')}`;detailTitleInline.textContent=w?w.title:''}
 function navDetail(dir){const idx=works.findIndex(w=>w.id===currentWorkId);const n=works[idx+dir];if(n)openDetail(n.id)}
 
 detailBack.addEventListener('click',closeDetail);
-detailPrev.addEventListener('click',()=>navDetail(-1));detailNext.addEventListener('click',()=>navDetail(1));
 detailPrevBottom.addEventListener('click',()=>navDetail(-1));detailNextBottom.addEventListener('click',()=>navDetail(1));
 document.addEventListener('keydown',e=>{if(!detailOverlay.classList.contains('open'))return;if(e.key==='Escape')closeDetail();if(e.key==='ArrowLeft')navDetail(-1);if(e.key==='ArrowRight')navDetail(1)});
+var tsX=0,tsY=0;detailOverlay.addEventListener('touchstart',e=>{tsX=e.touches[0].clientX;tsY=e.touches[0].clientY},{passive:true});detailOverlay.addEventListener('touchend',e=>{var dx=e.changedTouches[0].clientX-tsX,dy=e.changedTouches[0].clientY-tsY;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)navDetail(dx>0?-1:1)});
 detailOverlay.addEventListener('click',e=>{if(!e.target.closest('button')&&!e.target.closest('a')&&!e.target.closest('input')&&!e.target.closest('textarea'))closeDetail()});
 detailOverlay.addEventListener('scroll',()=>{detailBackToTop.classList.toggle('visible',detailOverlay.scrollTop>400)},{passive:true});
 detailBackToTop.addEventListener('click',()=>{detailOverlay.scrollTo({top:0,behavior:'smooth'})});
