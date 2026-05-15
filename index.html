@@ -751,6 +751,7 @@ const galleryEl=document.getElementById('gallery'),filterList=document.getElemen
   detailBackToTop=document.getElementById('detailBackToTop'),nav=document.getElementById('nav');
 
 function renderGallery(filter){
+  works=loadWorks();
   const filtered=filter==='all'?works:works.filter(w=>w.category===filter);
   galleryEl.innerHTML=filtered.map((w,i)=>`
     <div class="work-card" data-id="${w.id}">
@@ -784,6 +785,7 @@ filterList.addEventListener('click',e=>{
 });
 
 function openDetail(id){
+  works=loadWorks();
   const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
   // Collect images for carousel: gallery + detail image blocks
   const carouselImgs=[];
