@@ -265,11 +265,11 @@ body::after{
   position:fixed;inset:0;z-index:200;
   background:rgba(243,242,239,.95);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
   overflow-y:auto;overflow-x:hidden;
-  visibility:hidden;opacity:0;
-  transition:visibility .4s,opacity .4s;
+  visibility:hidden;opacity:0;transform:scale(.96);
+  transition:visibility .45s,opacity .45s,transform .45s var(--ease-out);
   scroll-behavior:smooth;
 }
-.detail-overlay.open{visibility:visible;opacity:1}
+.detail-overlay.open{visibility:visible;opacity:1;transform:scale(1)}
 .detail-overlay::-webkit-scrollbar{width:4px}
 .detail-overlay::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px}
 
@@ -327,6 +327,10 @@ body::after{
 .detail-back-to-top svg{width:18px;height:18px}
 
 .detail-body{max-width:900px;margin:0 auto;padding:32px 24px 80px}
+.detail-body.slide-in-left{animation:slideInLeft .35s var(--ease-out)}
+.detail-body.slide-in-right{animation:slideInRight .35s var(--ease-out)}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
 .detail-hero-image{
   width:100%;background:#e8e6e2;border-radius:var(--radius-lg);
   overflow:hidden;margin-bottom:40px;
@@ -481,8 +485,8 @@ body::after{
   .detail-header{width:calc(100% - 32px);top:10px}
 }
 @media(max-width:640px){
-  .gallery{column-count:2;column-gap:8px;padding:0 10px 40px}
-  .gallery .work-card{margin-bottom:8px;break-inside:avoid}
+  .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:0 10px 40px}
+  .gallery .work-card{margin-bottom:0;break-inside:unset}
   .work-card-info{padding:10px 12px 10px}
   .work-card-title{font-size:13px}
   .work-card-category{font-size:9.5px}
@@ -784,7 +788,7 @@ function openDetail(id){
 
 function closeDetail(){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBackToTop.classList.remove('visible')}
 function updateDetailNav(){const idx=works.findIndex(w=>w.id===currentWorkId);const w=works[idx];const p=idx>0,n=idx<works.length-1;detailPrevBottom.style.opacity=p?'1':'.35';detailPrevBottom.style.pointerEvents=p?'auto':'none';detailNextBottom.style.opacity=n?'1':'.35';detailNextBottom.style.pointerEvents=n?'auto':'none';detailCounter.textContent=`${String(idx+1).padStart(2,'0')} / ${String(works.length).padStart(2,'0')}`;detailTitleInline.textContent=w?w.title:''}
-function navDetail(dir){const idx=works.findIndex(w=>w.id===currentWorkId);const n=works[idx+dir];if(n)openDetail(n.id)}
+function navDetail(dir){const idx=works.findIndex(w=>w.id===currentWorkId);const n=works[idx+dir];if(!n)return;detailBody.classList.add(dir>0?'slide-in-right':'slide-in-left');setTimeout(()=>detailBody.classList.remove('slide-in-right','slide-in-left'),400);openDetail(n.id)}
 
 detailBack.addEventListener('click',closeDetail);
 detailPrevBottom.addEventListener('click',()=>navDetail(-1));detailNextBottom.addEventListener('click',()=>navDetail(1));
