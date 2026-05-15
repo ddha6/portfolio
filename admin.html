@@ -179,6 +179,7 @@ body{
       <button class="btn btn-primary" onclick="addWork()">+ 新建作品</button>
       <button class="btn btn-outline btn-sm" onclick="exportData()">导出</button>
       <button class="btn btn-outline btn-sm" onclick="importData()">导入</button>
+      <button class="btn btn-outline btn-sm" style="background:#e53935;color:#fff;border-color:#e53935" onclick="deploySite()">🚀 发布上线</button>
       <button class="btn btn-danger btn-sm" onclick="resetAll()">重置</button>
     </div>
     <div class="work-list" id="workList"></div>
@@ -478,6 +479,23 @@ function openPreview(){
 function closePreview(){document.getElementById('previewModal').classList.remove('open')}
 
 // ====== Export / Import / Reset ======
+function deploySite(){
+  save();
+  var data=JSON.stringify(works,null,2);
+  // Export deploy package: data file + instructions
+  var zipContent='=== 发布步骤 ===\n1. 将本 JSON 内容发给助手\n2. 助手会将数据写入 index.html 并推送上线\n\n=== 数据 ===\n'+data;
+  var blob=new Blob([zipContent],{type:'text/plain'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='deploy-data.txt';a.click();
+  toast('已导出 deploy-data.txt，发送给助手即可上线 ✓');
+  // Also export JSON backup
+  setTimeout(function(){
+    var b=new Blob([data],{type:'application/json'});
+    var c=document.createElement('a');c.href=URL.createObjectURL(b);
+    c.download='portfolio-data.json';c.click();
+  },500);
+}
+
 function exportData(){
   var blob=new Blob([JSON.stringify(works,null,2)],{type:'application/json'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);
