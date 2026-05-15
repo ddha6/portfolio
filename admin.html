@@ -208,19 +208,19 @@ const posterImgs=['4d08e76c94c64fff6e443cef4b021d6c.jpg','5b3772b9b6faa11d190db7
 function defImg(cat,i){var f=cat==='电商设计'?'ecommerce':'poster';var a=cat==='电商设计'?ecomImgs:posterImgs;return'images/'+f+'/'+a[i%a.length]}
 
 function getDefaultWorks(){return[
-  {id:1,title:'OMEGA · 手表天猫详情页',category:'电商设计',client:'OMEGA旗舰店',year:'2024',img:defImg('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'为 OMEGA 手表旗舰店设计天猫详情页，需要突出产品的高端质感与精密工艺。'},{t:'text',title:'设计思路',c:'采用深色基调配合金属质感元素，通过大图展示产品细节，营造奢华氛围。'}],specs:{'项目类型':'电商详情页','客户':'OMEGA旗舰店','年份':'2024','服务内容':'页面规划 / 视觉设计 / 图文排版'}},
-  {id:2,title:'花西子 · 口红详情页',category:'电商设计',client:'花西子旗舰店',year:'2024',img:defImg('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'花西子新品口红上市，需要一套完整的电商详情页设计，突出东方美学的品牌基因与产品特色。'}],specs:{'项目类型':'电商详情页','客户':'花西子旗舰店','年份':'2024','服务内容':'视觉设计 / 精修排版 / 文案策划'}},
-  {id:3,title:'小米有品 · 家电详情页',category:'电商设计',client:'小米有品',year:'2024',img:defImg('电商设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'小米有品智能家电新品上线，需要设计符合小米品牌调性的电商详情页，强调科技感与性价比。'}],specs:{'项目类型':'电商详情页','客户':'小米有品','年份':'2024','服务内容':'页面设计 / 3D渲染 / 详情排版'}},
-  {id:4,title:'Nike · 跑步鞋详情页',category:'电商设计',client:'Nike旗舰店',year:'2024',img:defImg('电商设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'Nike 新款跑鞋天猫详情页设计，需要突出产品的科技含量与运动性能，同时保持品牌一贯的动感调性。'}],specs:{'项目类型':'电商详情页','客户':'Nike旗舰店','年份':'2024','服务内容':'视觉设计 / 动效设计 / 文案排版'}},
-  {id:5,title:'美的 · 空调详情页',category:'电商设计',client:'美的旗舰店',year:'2024',img:defImg('电商设计',4),detail:[{t:'image'},{t:'text',title:'项目背景',c:'美的智能空调新品详情页设计，需要清晰传达产品的核心卖点与技术优势。'}],specs:{'项目类型':'电商详情页','客户':'美的旗舰店','年份':'2024','服务内容':'页面设计 / 卖点策划 / ICON设计'}},
-  {id:6,title:'瑞幸 · 樱花季详情页',category:'电商设计',client:'瑞幸咖啡',year:'2024',img:defImg('电商设计',5),detail:[{t:'image'},{t:'text',title:'项目背景',c:'瑞幸咖啡樱花季限定系列详情页设计，需要营造春日浪漫氛围，吸引女性消费群体。'}],specs:{'项目类型':'电商详情页','客户':'瑞幸咖啡','年份':'2024','服务内容':'视觉设计 / 场景搭建 / 文案策划'}},
-  {id:7,title:'COLORKEY · 唇釉详情页',category:'电商设计',client:'COLORKEY旗舰店',year:'2024',img:defImg('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'COLORKEY 新品唇釉系列详情页设计，针对Z世代消费群体，需要潮流感与视觉冲击力。'}],specs:{'项目类型':'电商详情页','客户':'COLORKEY旗舰店','年份':'2024','服务内容':'视觉设计 / 模特精修 / 详情排版'}},
-  {id:8,title:'野兽派 · 香薰详情页',category:'电商设计',client:'野兽派旗舰店',year:'2024',img:defImg('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'野兽派高端香薰系列详情页，需要营造沉浸式的感官体验，用视觉传达嗅觉的美感。'}],specs:{'项目类型':'电商详情页','客户':'野兽派旗舰店','年份':'2024','服务内容':'视觉设计 / 场景拍摄 / 详情排版'}},
-  {id:9,title:'极光音乐节 · 海报系列',category:'海报设计',client:'极光音乐节',year:'2024',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'极光音乐节是一年一度的户外音乐盛会，需要一套视觉冲击力强的海报系列用于线上线下宣传。'}],specs:{'项目类型':'海报设计','客户':'极光音乐节','年份':'2024','服务内容':'主视觉 / 系列海报 / 动态海报'}},
-  {id:10,title:'京东618 · 活动主视觉',category:'海报设计',client:'京东',year:'2024',img:defImg('海报设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'京东618年中大促活动主视觉设计，需要在众多促销信息中脱颖而出，传递狂欢氛围。'}],specs:{'项目类型':'活动主视觉','客户':'京东','年份':'2024','服务内容':'主KV / 延展物料 / 会场设计'}},
-  {id:11,title:'双11 · 天猫主视觉',category:'海报设计',client:'天猫',year:'2024',img:defImg('海报设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'天猫双11全球狂欢节主视觉设计，需要兼顾品牌调性与大促氛围，在线上线下多触点统一传达。'}],specs:{'项目类型':'活动主视觉','客户':'天猫','年份':'2024','服务内容':'主KV / 会场设计 / 线下物料'}},
-  {id:12,title:'时光印记 · 摄影展海报',category:'海报设计',client:'城市美术馆',year:'2024',img:defImg('海报设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'"时光印记"城市摄影展海报设计，需要在方寸之间传达展览的主题与艺术调性。'}],specs:{'项目类型':'海报设计','客户':'城市美术馆','年份':'2024','服务内容':'主海报 / 系列海报 / 展览物料'}},
-  {id:13,title:'蔚来 · 新车发布海报',category:'海报设计',client:'蔚来汽车',year:'2024',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'蔚来新款车型发布预热海报系列，需要在发布前通过视觉逐步揭开新车面纱，制造期待感。'}],specs:{'项目类型':'海报设计','客户':'蔚来汽车','年份':'2024','服务内容':'预热海报 / 发布主视觉 / 社交媒体物料'}}
+  {id:1,title:'OMEGA · 手表天猫详情页',category:'电商设计',client:'OMEGA旗舰店',price:'¥299',img:defImg('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'为 OMEGA 手表旗舰店设计天猫详情页，需要突出产品的高端质感与精密工艺。'},{t:'text',title:'设计思路',c:'采用深色基调配合金属质感元素，通过大图展示产品细节，营造奢华氛围。'}],specs:{'项目类型':'电商详情页','客户':'OMEGA旗舰店','价格':'¥299','服务内容':'页面规划 / 视觉设计 / 图文排版'}},
+  {id:2,title:'花西子 · 口红详情页',category:'电商设计',client:'花西子旗舰店',price:'¥299',img:defImg('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'花西子新品口红上市，需要一套完整的电商详情页设计，突出东方美学的品牌基因与产品特色。'}],specs:{'项目类型':'电商详情页','客户':'花西子旗舰店','价格':'¥299','服务内容':'视觉设计 / 精修排版 / 文案策划'}},
+  {id:3,title:'小米有品 · 家电详情页',category:'电商设计',client:'小米有品',price:'¥299',img:defImg('电商设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'小米有品智能家电新品上线，需要设计符合小米品牌调性的电商详情页，强调科技感与性价比。'}],specs:{'项目类型':'电商详情页','客户':'小米有品','价格':'¥299','服务内容':'页面设计 / 3D渲染 / 详情排版'}},
+  {id:4,title:'Nike · 跑步鞋详情页',category:'电商设计',client:'Nike旗舰店',price:'¥299',img:defImg('电商设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'Nike 新款跑鞋天猫详情页设计，需要突出产品的科技含量与运动性能，同时保持品牌一贯的动感调性。'}],specs:{'项目类型':'电商详情页','客户':'Nike旗舰店','价格':'¥299','服务内容':'视觉设计 / 动效设计 / 文案排版'}},
+  {id:5,title:'美的 · 空调详情页',category:'电商设计',client:'美的旗舰店',price:'¥299',img:defImg('电商设计',4),detail:[{t:'image'},{t:'text',title:'项目背景',c:'美的智能空调新品详情页设计，需要清晰传达产品的核心卖点与技术优势。'}],specs:{'项目类型':'电商详情页','客户':'美的旗舰店','价格':'¥299','服务内容':'页面设计 / 卖点策划 / ICON设计'}},
+  {id:6,title:'瑞幸 · 樱花季详情页',category:'电商设计',client:'瑞幸咖啡',price:'¥299',img:defImg('电商设计',5),detail:[{t:'image'},{t:'text',title:'项目背景',c:'瑞幸咖啡樱花季限定系列详情页设计，需要营造春日浪漫氛围，吸引女性消费群体。'}],specs:{'项目类型':'电商详情页','客户':'瑞幸咖啡','价格':'¥299','服务内容':'视觉设计 / 场景搭建 / 文案策划'}},
+  {id:7,title:'COLORKEY · 唇釉详情页',category:'电商设计',client:'COLORKEY旗舰店',price:'¥299',img:defImg('电商设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'COLORKEY 新品唇釉系列详情页设计，针对Z世代消费群体，需要潮流感与视觉冲击力。'}],specs:{'项目类型':'电商详情页','客户':'COLORKEY旗舰店','价格':'¥299','服务内容':'视觉设计 / 模特精修 / 详情排版'}},
+  {id:8,title:'野兽派 · 香薰详情页',category:'电商设计',client:'野兽派旗舰店',price:'¥299',img:defImg('电商设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'野兽派高端香薰系列详情页，需要营造沉浸式的感官体验，用视觉传达嗅觉的美感。'}],specs:{'项目类型':'电商详情页','客户':'野兽派旗舰店','价格':'¥299','服务内容':'视觉设计 / 场景拍摄 / 详情排版'}},
+  {id:9,title:'极光音乐节 · 海报系列',category:'海报设计',client:'极光音乐节',price:'¥299',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'极光音乐节是一年一度的户外音乐盛会，需要一套视觉冲击力强的海报系列用于线上线下宣传。'}],specs:{'项目类型':'海报设计','客户':'极光音乐节','价格':'¥299','服务内容':'主视觉 / 系列海报 / 动态海报'}},
+  {id:10,title:'京东618 · 活动主视觉',category:'海报设计',client:'京东',price:'¥299',img:defImg('海报设计',1),detail:[{t:'image'},{t:'text',title:'项目背景',c:'京东618年中大促活动主视觉设计，需要在众多促销信息中脱颖而出，传递狂欢氛围。'}],specs:{'项目类型':'活动主视觉','客户':'京东','价格':'¥299','服务内容':'主KV / 延展物料 / 会场设计'}},
+  {id:11,title:'双11 · 天猫主视觉',category:'海报设计',client:'天猫',price:'¥299',img:defImg('海报设计',2),detail:[{t:'image'},{t:'text',title:'项目背景',c:'天猫双11全球狂欢节主视觉设计，需要兼顾品牌调性与大促氛围，在线上线下多触点统一传达。'}],specs:{'项目类型':'活动主视觉','客户':'天猫','价格':'¥299','服务内容':'主KV / 会场设计 / 线下物料'}},
+  {id:12,title:'时光印记 · 摄影展海报',category:'海报设计',client:'城市美术馆',price:'¥299',img:defImg('海报设计',3),detail:[{t:'image'},{t:'text',title:'项目背景',c:'"时光印记"城市摄影展海报设计，需要在方寸之间传达展览的主题与艺术调性。'}],specs:{'项目类型':'海报设计','客户':'城市美术馆','价格':'¥299','服务内容':'主海报 / 系列海报 / 展览物料'}},
+  {id:13,title:'蔚来 · 新车发布海报',category:'海报设计',client:'蔚来汽车',price:'¥299',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'蔚来新款车型发布预热海报系列，需要在发布前通过视觉逐步揭开新车面纱，制造期待感。'}],specs:{'项目类型':'海报设计','客户':'蔚来汽车','价格':'¥299','服务内容':'预热海报 / 发布主视觉 / 社交媒体物料'}}
 ]}
 
 // Load
@@ -250,7 +250,7 @@ function selectWork(id){selectedId=id;refreshList();renderEditor()}
 
 function addWork(){
   var maxId=0;works.forEach(function(w){if(w.id>maxId)maxId=w.id});
-  var w={id:maxId+1,title:'新作品',category:'电商设计',client:'',year:'2024',img:'',detail:[{t:'image'},{t:'text',title:'项目背景',c:''}]};
+  var w={id:maxId+1,title:'新作品',category:'电商设计',client:'',price:'¥299',img:'',detail:[{t:'image'},{t:'text',title:'项目背景',c:''}]};
   works.unshift(w);save();selectedId=w.id;refreshList();renderEditor();toast('已创建新作品')
 }
 
@@ -293,7 +293,7 @@ function renderEditor(){
       '</div>'+
       '<div class="form-row">'+
         '<div class="form-group"><label>客户</label><input value="'+esc(w.client||'')+'" id="edClient"></div>'+
-        '<div class="form-group"><label>年份</label><input value="'+esc(w.year||'')+'" id="edYear"></div>'+
+        '<div class="form-group"><label>价格</label><input value="'+esc(w.price||'')+'" id="edPrice" placeholder="如 ¥299"></div>'+
       '</div>'+
       '<div class="form-row">'+
         '<div class="form-group"><label>主图（缩略图）</label>'+
@@ -308,16 +308,16 @@ function renderEditor(){
     '</div>'+
     '<div class="editor-section">'+
       '<h3>主图集（可用于轮播，第一张为封面）</h3>'+
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px" id="galleryThumbs">'+
-        (w.gallery||[]).map(function(src,i){return'<div style="position:relative;width:90px;height:90px;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid '+(i===0?'var(--accent)':'rgba(0,0,0,.08)')+'" onclick="setCover('+i+')" title="'+(i===0?'当前封面':'点击设为封面')+'">'+
+      '<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory" id="galleryThumbs">'+
+        (!w.gallery||w.gallery.length===0?('<span style="font-size:12px;color:var(--text3);flex-shrink:0;padding:20px">暂无主图，请上传</span>'):'')+
+        (w.gallery||[]).map(function(src,i){return'<div style="position:relative;flex-shrink:0;width:100px;height:100px;border-radius:12px;overflow:hidden;cursor:pointer;border:3px solid '+(i===0?'var(--accent)':'rgba(0,0,0,.06)')+';scroll-snap-align:start;transition:border .2s" onclick="setCover('+i+')" title="'+(i===0?'当前封面':'点击设为封面')+'">'+
           '<img src="'+esc(src)+'" style="width:100%;height:100%;object-fit:cover">'+
-          '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);color:#fff;font-size:9px;text-align:center;padding:3px">'+(i===0?'封面':'')+'</div>'+
-          '<div style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer" onclick="event.stopPropagation();removeGalleryImg('+i+')">✕</div>'+
+          '<div style="position:absolute;bottom:0;left:0;right:0;background:'+(i===0?'var(--accent)':'rgba(0,0,0,.55)')+';color:#fff;font-size:10px;text-align:center;padding:4px;font-weight:'+(i===0?'600':'400')+'">'+(i===0?'★ 封面':'点击设封面')+'</div>'+
+          '<div style="position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer" onclick="event.stopPropagation();removeGalleryImg('+i+')">✕</div>'+
         '</div>'}).join('')+
-        (!w.gallery||w.gallery.length===0?('<span style="font-size:12px;color:var(--text3)">暂无主图集，请上传</span>'):'')+
       '</div>'+
       '<button class="btn btn-outline btn-sm" onclick="document.getElementById(\'galleryInput\').click()">+ 上传主图</button>'+
-      '<p style="font-size:11px;color:var(--text3);margin-top:6px">首张为封面，点击图片可设为封面 · 封面同步为缩略图</p>'+
+      '<p style="font-size:11px;color:var(--text3);margin-top:6px">← 左右滑动查看 · 点击图片设为封面 · 封面同步为缩略图</p>'+
     '</div>'+
     '<div class="editor-section">'+
       '<h3>详情内容模块（淘宝式下滑详情）</h3>'+
@@ -342,8 +342,8 @@ function saveEditor(){
   w.title=document.getElementById('edTitle').value||'未命名';
   w.category=document.getElementById('edCat').value;
   w.client=document.getElementById('edClient').value;
-  w.year=document.getElementById('edYear').value;
-  if(w.specs){w.specs['客户']=w.client;w.specs['年份']=w.year}
+  w.price=document.getElementById('edPrice').value;
+  if(w.specs){w.specs['客户']=w.client;w.specs['价格']=w.price}
   // Sync cover from gallery
   if(w.gallery&&w.gallery.length>0)w.img=w.gallery[0];
   save();renderEditor();toast('已保存 ✓')
