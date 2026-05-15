@@ -275,7 +275,7 @@ body::after{
 
 .detail-header{
   position:sticky;top:14px;z-index:10;
-  margin:14px auto 0;width:calc(100% - 48px);max-width:900px;
+  margin:14px auto 0;width:calc(100% - 48px);max-width:700px;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 22px;height:52px;
   background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
@@ -326,7 +326,7 @@ body::after{
 .detail-back-to-top.visible{opacity:1;visibility:visible;transform:translateY(0)}
 .detail-back-to-top svg{width:18px;height:18px}
 
-.detail-body{max-width:900px;margin:0 auto;padding:32px 24px 80px;transition:opacity .25s,transform .25s cubic-bezier(.22,1,.36,1)}
+.detail-body{max-width:700px;margin:0 auto;padding:24px 20px 64px;transition:opacity .25s,transform .25s cubic-bezier(.22,1,.36,1)}
 .detail-body.swipe-out-left{opacity:0;transform:translate3d(-60px,0,0)}
 .detail-body.swipe-out-right{opacity:0;transform:translate3d(60px,0,0)}
 .detail-hero{width:100%;max-width:80%;margin:0 auto 40px;position:relative}
@@ -344,9 +344,9 @@ body::after{
 .detail-hero-arrow.next{right:10px}
 .detail-hero-arrow svg{width:18px;height:18px}
 .detail-title-section{margin-bottom:44px}
-.detail-category{font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:10px}
-.detail-title{font-size:clamp(26px,4vw,38px);font-weight:350;letter-spacing:-.02em;line-height:1.2;margin-bottom:14px}
-.detail-desc{font-size:15px;color:var(--text-secondary);line-height:1.8;max-width:600px}
+.detail-category{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:8px}
+.detail-title{font-size:clamp(22px,3.5vw,32px);font-weight:350;letter-spacing:-.02em;line-height:1.2;margin-bottom:12px}
+.detail-desc{font-size:13px;color:var(--text-secondary);line-height:1.8;max-width:500px}
 .detail-meta{
   display:grid;grid-template-columns:repeat(4,1fr);gap:24px;
   padding:28px 0;border-top:1px solid rgba(0,0,0,.05);border-bottom:1px solid rgba(0,0,0,.05);
@@ -749,7 +749,7 @@ function renderGallery(filter){
   const filtered=filter==='all'?works:works.filter(w=>w.category===filter);
   galleryEl.innerHTML=filtered.map((w,i)=>`
     <div class="work-card" data-id="${w.id}">
-      <div class="work-card-image" style="aspect-ratio:${w.category==='海报设计'?'16/9':'3/4'}">
+      <div class="work-card-image" style="aspect-ratio:3/4">
         <img src="${w.img}" alt="${w.title}" loading="lazy">
         <div class="work-card-glass-overlay"><span>查看作品</span></div>
       </div>
