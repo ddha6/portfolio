@@ -236,7 +236,19 @@ var selectedId=null,editingBlockIdx=null;
 var toastTimer;
 
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2000)}
-function save(){try{localStorage.setItem('pf_works',JSON.stringify(works));toast('已保存 ✓')}catch(e){toast('保存失败')};refreshList()}
+function save(){
+  try{localStorage.setItem('pf_works',JSON.stringify(works))}catch(e){}
+  // Sync to API server if running
+  try{
+    var xhr=new XMLHttpRequest();
+    xhr.open('POST','/api/works/batch',true);
+    xhr.setRequestHeader('Content-Type','application/json');
+    xhr.onload=function(){if(xhr.status===200)toast('已保存并同步到服务器 ✓');else toast('已保存（本地）')};
+    xhr.onerror=function(){toast('已保存（本地）')};
+    xhr.send(JSON.stringify(works));
+  }catch(e){toast('已保存（本地）')}
+  refreshList();
+}
 function downloadDataJS(){var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';var b=new Blob([js],{type:'application/javascript'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='data.js';a.click();toast('已下载 data.js，双击 deploy.bat 即可上线 ✓')}
 
 // ====== Sidebar List ======

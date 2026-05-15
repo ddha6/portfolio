@@ -737,14 +737,28 @@ function getDefaultWorks(){return[
 ]}
 
 // Load works from localStorage or use defaults
-function loadWorks(){
+// Load works: API > localStorage > DEFAULT_WORKS
+async function loadWorks(){
+  try{
+    const r=await fetch('/api/works');
+    if(r.ok){const d=await r.json();if(d.success&&d.data.length>0)return d.data}
+  }catch(e){}
   try{const d=localStorage.getItem('pf_works');if(d)return JSON.parse(d)}catch(e){}
   return DEFAULT_WORKS;
 }
-let works = loadWorks();
+let works = DEFAULT_WORKS;
 
-// Auto-refresh when admin saves
-window.addEventListener('storage',e=>{if(e.key==='pf_works'){works=loadWorks();renderGallery(activeFilter)}});
+// Init: load from API then render
+(async function(){
+  works = await loadWorks();
+  renderGallery('all');
+  window.addEventListener('load',()=>renderGallery(activeFilter));
+})();
+
+// Auto-refresh when admin saves (localStorage + storage event)
+window.addEventListener('storage',async e=>{
+  if(e.key==='pf_works'){works=await loadWorks();renderGallery(activeFilter)}
+});
 
 let activeFilter='all',currentWorkId=null,lastScrollY=0;
 const galleryEl=document.getElementById('gallery'),filterList=document.getElementById('filterList'),
@@ -754,8 +768,8 @@ const galleryEl=document.getElementById('gallery'),filterList=document.getElemen
   detailTitleInline=document.getElementById('detailTitleInline'),
   detailBackToTop=document.getElementById('detailBackToTop'),nav=document.getElementById('nav');
 
-function renderGallery(filter){
-  works=loadWorks();
+async function renderGallery(filter){
+  works=await loadWorks();
   const filtered=filter==='all'?works:works.filter(w=>w.category===filter);
   galleryEl.innerHTML=filtered.map((w,i)=>`
     <div class="work-card" data-id="${w.id}">
@@ -788,8 +802,8 @@ filterList.addEventListener('click',e=>{
   setTimeout(()=>renderGallery(activeFilter),280);
 });
 
-function openDetail(id){
-  works=loadWorks();
+async function openDetail(id){
+  works=await loadWorks();
   const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
   if(!w.detail)w.detail=[];
   if(!w.specs)w.specs={};
@@ -931,8 +945,7 @@ document.addEventListener('keydown',e=>{
 
 window.addEventListener('scroll',()=>{const y=window.scrollY;if(y>200&&y>lastScrollY+6)nav.classList.add('hidden');else if(y<lastScrollY-3)nav.classList.remove('hidden');lastScrollY=y},{passive:true});
 
-renderGallery('all');
-window.addEventListener('load',()=>renderGallery(activeFilter));
+// renderGallery called in async init above
 </script>
 </body>
 </html>
