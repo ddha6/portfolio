@@ -152,9 +152,9 @@ body::after{
 .avatar-name{font-size:17px;font-weight:550;letter-spacing:-.01em;position:relative;z-index:1}
 .avatar-role{font-size:12px;color:var(--text-secondary);letter-spacing:.04em;margin-top:-8px;position:relative;z-index:1}
 .avatar-email{
-  font-size:12px;color:var(--text-tertiary);letter-spacing:.02em;
+  font-size:12px;color:var(--text-secondary);letter-spacing:.02em;
   padding:7px 16px;border-radius:100px;
-  background:rgba(0,0,0,.025);transition:all .25s;
+  background:rgba(0,0,0,.04);transition:all .25s;
   position:relative;z-index:1;
 }
 .avatar-email:hover{background:rgba(0,0,0,.05);color:var(--text-secondary)}
@@ -466,16 +466,19 @@ body::after{
   .detail-header{width:calc(100% - 32px);top:10px}
 }
 @media(max-width:640px){
-  .gallery{column-count:1;column-gap:14px;padding:0 16px 40px}
+  .gallery{column-count:2;column-gap:10px;padding:0 12px 40px}
   .gallery .work-card{margin-bottom:14px}
   .nav{width:calc(100% - 20px);padding:0 16px;height:46px;top:10px}
   .nav-links a{font-size:12px;padding:6px 12px}
   .hero{padding:96px 16px 24px;gap:20px}
   .hero-title{font-size:28px}
   .hero-desc{font-size:13px}
-  .avatar-card{padding:16px 18px;gap:12px}
-  .avatar-img{width:52px;height:52px}
-  .avatar-name{font-size:15px}
+  .avatar-card{flex-direction:column;align-items:center;text-align:center;padding:20px 18px;gap:10px}
+  .avatar-card>*{flex-shrink:0;margin:0 auto}
+  .avatar-img{width:56px;height:56px}
+  .avatar-name{font-size:16px}
+  .avatar-role{margin-top:-6px;font-size:12px}
+  .avatar-email{font-size:11px;color:var(--text-secondary)}
   .filter-section{padding:0 16px;margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .filter-list{flex-wrap:nowrap}
   .filter-btn{white-space:nowrap;font-size:11px;padding:8px 16px}
@@ -769,7 +772,7 @@ detailBack.addEventListener('click',closeDetail);
 detailPrev.addEventListener('click',()=>navDetail(-1));detailNext.addEventListener('click',()=>navDetail(1));
 detailPrevBottom.addEventListener('click',()=>navDetail(-1));detailNextBottom.addEventListener('click',()=>navDetail(1));
 document.addEventListener('keydown',e=>{if(!detailOverlay.classList.contains('open'))return;if(e.key==='Escape')closeDetail();if(e.key==='ArrowLeft')navDetail(-1);if(e.key==='ArrowRight')navDetail(1)});
-detailOverlay.addEventListener('click',e=>{if(e.target===detailOverlay)closeDetail()});
+detailOverlay.addEventListener('click',e=>{if(!e.target.closest('button')&&!e.target.closest('a')&&!e.target.closest('input')&&!e.target.closest('textarea'))closeDetail()});
 detailOverlay.addEventListener('scroll',()=>{detailBackToTop.classList.toggle('visible',detailOverlay.scrollTop>400)},{passive:true});
 detailBackToTop.addEventListener('click',()=>{detailOverlay.scrollTo({top:0,behavior:'smooth'})});
 
