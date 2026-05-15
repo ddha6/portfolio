@@ -791,11 +791,10 @@ function openDetail(id){
   if(!w.detail)w.detail=[];
   if(!w.specs)w.specs={};
   if(!w.img)w.img='';
-  // Collect images for carousel: gallery + detail image blocks
+  // Carousel: only gallery images (or main img as fallback), NOT detail blocks
   const carouselImgs=[];
   if(w.gallery&&w.gallery.length>0){w.gallery.forEach(src=>carouselImgs.push(src))}
   else{carouselImgs.push(w.img)}
-  w.detail.forEach(b=>{if(b.t==='image'&&b.src&&b.src.length>10)carouselImgs.push(b.src)});
   let html='';
   if(carouselImgs.length>0){
     html+=`<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">`;
