@@ -788,6 +788,9 @@ filterList.addEventListener('click',e=>{
 function openDetail(id){
   works=loadWorks();
   const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
+  if(!w.detail)w.detail=[];
+  if(!w.specs)w.specs={};
+  if(!w.img)w.img='';
   // Collect images for carousel: gallery + detail image blocks
   const carouselImgs=[];
   if(w.gallery&&w.gallery.length>0){w.gallery.forEach(src=>carouselImgs.push(src))}
