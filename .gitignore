@@ -4,3 +4,5 @@
 Thumbs.db
 *.ps1
 token.js
+node_modules/
+data/works.json
