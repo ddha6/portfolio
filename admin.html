@@ -510,8 +510,12 @@ var GITHUB_REPO='ddha6/portfolio';
 
 function deployToGitHub(){
   save();
+  if(typeof GITHUB_TOKEN==='undefined'){toast('token.js 未加载，请确认文件存在');return}
   var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';
-  var content=btoa(unescape(encodeURIComponent(js)));
+  // Base64 encode with UTF-8 support
+  var bytes=[];for(var i=0;i<js.length;i++){var c=js.charCodeAt(i);if(c<128)bytes.push(c);else if(c<2048){bytes.push(192|(c>>6));bytes.push(128|(c&63))}else{bytes.push(224|(c>>12));bytes.push(128|((c>>6)&63));bytes.push(128|(c&63))}}
+  var content='';for(var i=0;i<bytes.length;i++)content+=String.fromCharCode(bytes[i]);
+  content=btoa(content);
   // Get current file SHA
   var xhr=new XMLHttpRequest();
   xhr.open('GET','https://api.github.com/repos/'+GITHUB_REPO+'/contents/data.js',true);
@@ -521,7 +525,6 @@ function deployToGitHub(){
     if(xhr.status===200||xhr.status===404){
       var sha=null;
       if(xhr.status===200){var r=JSON.parse(xhr.responseText);sha=r.sha}
-      // Create/update file
       var body=JSON.stringify({message:'update: data refresh',content:content,branch:'main'});
       if(sha)body=JSON.stringify({message:'update: data refresh',content:content,sha:sha,branch:'main'});
       var put=new XMLHttpRequest();
@@ -531,11 +534,15 @@ function deployToGitHub(){
       put.setRequestHeader('Content-Type','application/json');
       put.onload=function(){
         if(put.status===200||put.status===201){toast('✓ 已发布上线！1分钟后刷新网站查看')}
-        else{try{var e=JSON.parse(put.responseText);toast('发布失败: '+e.message)}catch(err){toast('发布失败，请检查网络')}}
+        else{try{var e=JSON.parse(put.responseText);toast('发布失败: '+e.message)}catch(err){toast('发布失败，状态码:'+put.status)}}
       };
+      put.onerror=function(){toast('网络连接失败，请检查网络')};
       put.send(body);
-    }else{toast('网络错误，请重试')}
+    }else{
+      try{var e2=JSON.parse(xhr.responseText);toast('获取文件失败: '+e2.message)}catch(err){toast('API错误，状态码:'+xhr.status)}
+    }
   };
+  xhr.onerror=function(){toast('无法连接 GitHub，请检查网络')};
   xhr.send();
 }
 
