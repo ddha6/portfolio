@@ -24,6 +24,6 @@ git commit -m "update: data refresh"
 git push origin main
 echo.
 echo ✓ 已推送上线！
-echo 刷新 https://ddha6.github.io/portfolio
+echo 刷新 https://aixiaotan.xyz
 echo.
 pause
