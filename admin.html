@@ -227,13 +227,18 @@ function getDefaultWorks(){return[
   {id:13,title:'蔚来 · 新车发布海报',category:'海报设计',client:'蔚来汽车',price:'¥299',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'蔚来新款车型发布预热海报系列，需要在发布前通过视觉逐步揭开新车面纱，制造期待感。'}],specs:{'项目类型':'海报设计','客户':'蔚来汽车','价格':'¥299','服务内容':'预热海报 / 发布主视觉 / 社交媒体物料'}}
 ]}
 
-// Load: merge DEFAULT_WORKS as source of truth
-var works=DEFAULT_WORKS.slice();try{var s=JSON.parse(localStorage.getItem("pf_works")||"null");if(s&&Array.isArray(s)){var si={};s.forEach(function(w){si[w.id]=1});DEFAULT_WORKS.forEach(function(w){if(!si[w.id])s.push(w)});works=s}}catch(e){}
+// IndexedDB storage (replaces localStorage — handles >5MB data)
+var db,dbReady,dbQueue=[];
+function openDB(cb){var r=indexedDB.open('pf_admin',1);r.onupgradeneeded=function(e){e.target.result.createObjectStore('data')};r.onsuccess=function(e){db=e.target.result;dbReady=1;cb();while(dbQueue.length)dbQueue.shift()()};r.onerror=function(){cb()}}
+function saveDB(k,v,cb){if(!dbReady){dbQueue.push(function(){saveDB(k,v,cb)});return}try{var t=db.transaction('data','readwrite');t.objectStore('data').put(v,k);t.oncomplete=function(){if(cb)cb(1)};t.onerror=function(){if(cb)cb(0)}}catch(e){if(cb)cb(0)}}
+function loadDB(k,cb){if(!dbReady){dbQueue.push(function(){loadDB(k,cb)});return}try{var t=db.transaction('data','readonly');var r=t.objectStore('data').get(k);r.onsuccess=function(){cb(r.result)};r.onerror=function(){cb(null)}}catch(e){cb(null)}}
+// Init: start from DEFAULT_WORKS, merge IndexedDB edits
+var works=DEFAULT_WORKS.slice();openDB(function(){loadDB('works',function(s){if(s&&Array.isArray(s)){var si={};s.forEach(function(w){si[w.id]=1});DEFAULT_WORKS.forEach(function(w){if(!si[w.id])s.push(w)});works=s}refreshList();renderEditor()})})
 var selectedId=null,editingBlockIdx=null,workDragId=null;
 var toastTimer;
 
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2000)}
-function save(){try{localStorage.setItem('pf_works',JSON.stringify(works));toast('已保存 ✓')}catch(e){toast('保存失败')};refreshList()}
+function save(){saveDB('works',works,function(ok){toast(ok?'已保存 ✓':'保存失败');refreshList()})}
 function downloadDataJS(){var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';var b=new Blob([js],{type:'application/javascript'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='data.js';a.click();toast('已下载 data.js，双击 deploy.bat 即可上线 ✓')}
 
 // ====== Sidebar List ======
@@ -552,8 +557,6 @@ function resetAll(){
 }
 
 // ====== Init ======
-refreshList();
-renderEditor();
 </script>
 </body>
 </html>
