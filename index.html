@@ -869,18 +869,8 @@ const spyObserver=new IntersectionObserver(entries=>{
 },{threshold:.1,rootMargin:'-80px 0px 0px 0px'});
 spyObserver.observe(gallerySection);
 if(heroSection)spyObserver.observe(heroSection);
-// Hero intersection sets about active
-new IntersectionObserver(entries=>{
-  entries.forEach(e=>{
-    if(e.target===heroSection&&e.isIntersecting){
-      navLinks.forEach(a=>a.classList.remove('active'));
-      if(window.scrollY<200)navLinks[0].classList.add('active');
-      else navLinks[2].classList.add('active');
-    }
-  });
-},{threshold:.3,rootMargin:'-60px 0px 0px 0px'}).observe(heroSection);
-
-// ============================================
+// Click nav to highlight, scroll resets to 作品
+navLinks.forEach(function(a){a.addEventListener("click",function(){navLinks.forEach(function(x){x.classList.remove("active")});a.classList.add("active")})});// ============================================
 // Hero Text — Staggered Character Reveal
 // ============================================
 (function(){
