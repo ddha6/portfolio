@@ -227,9 +227,8 @@ function getDefaultWorks(){return[
   {id:13,title:'蔚来 · 新车发布海报',category:'海报设计',client:'蔚来汽车',price:'¥299',img:defImg('海报设计',0),detail:[{t:'image'},{t:'text',title:'项目背景',c:'蔚来新款车型发布预热海报系列，需要在发布前通过视觉逐步揭开新车面纱，制造期待感。'}],specs:{'项目类型':'海报设计','客户':'蔚来汽车','价格':'¥299','服务内容':'预热海报 / 发布主视觉 / 社交媒体物料'}}
 ]}
 
-// Load
-var works;
-try{var d=localStorage.getItem('pf_works');works=d?JSON.parse(d):DEFAULT_WORKS}catch(e){works=DEFAULT_WORKS}
+// Load: merge DEFAULT_WORKS as source of truth
+var works=DEFAULT_WORKS.slice();try{var s=JSON.parse(localStorage.getItem("pf_works")||"null");if(s&&Array.isArray(s)){var si={};s.forEach(function(w){si[w.id]=1});DEFAULT_WORKS.forEach(function(w){if(!si[w.id])s.push(w)});works=s}}catch(e){}
 var selectedId=null,editingBlockIdx=null,workDragId=null;
 var toastTimer;
 
