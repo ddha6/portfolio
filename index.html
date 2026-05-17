@@ -280,6 +280,8 @@ body::after{
   scroll-behavior:smooth;will-change:transform,opacity;
 }
 .detail-overlay.open{visibility:visible;opacity:1;transform:scale(1)}
+.detail-overlay.expanding{transition:none}
+.detail-overlay.closing{transition:visibility .4s,opacity .4s cubic-bezier(.4,0,.2,1),transform .4s cubic-bezier(.4,0,.2,1)}
 .detail-overlay::-webkit-scrollbar{width:4px}
 .detail-overlay::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px}
 
@@ -739,69 +741,181 @@ filterList.addEventListener('click',e=>{
   setTimeout(()=>renderGallery(activeFilter),280);
 });
 
-async function openDetail(id){
-  works=await loadWorks();
-  const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
-  if(!w.detail)w.detail=[];
-  if(!w.specs)w.specs={};
-  if(!w.img)w.img='';
-  // Carousel: only gallery images (or main img as fallback), NOT detail blocks
-  const carouselImgs=[];
-  if(w.gallery&&w.gallery.length>0){w.gallery.forEach(src=>carouselImgs.push(src))}
-  else{carouselImgs.push(w.img)}
-  let html='';
-  if(carouselImgs.length>0){
-    html+=`<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">`;
-    carouselImgs.forEach((src,i)=>{
-      html+=`<div class="detail-hero-slide"><img src="${src}" alt="${w.title}"></div>`;
-    });
-    html+=`</div>`;
-    if(carouselImgs.length>1){
-      html+=`<div class="detail-hero-dots" id="heroDots">`;
-      carouselImgs.forEach((_,i)=>html+=`<div class="detail-hero-dot${i===0?' active':''}" data-idx="${i}"></div>`);
-      html+=`</div>`;
-      html+=`<div class="detail-hero-arrows"><button class="detail-hero-arrow prev" id="heroPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><button class="detail-hero-arrow next" id="heroNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>`;
+// ============================================
+// Shared Element Transition — FLIP card expand
+// ============================================
+const detailSpring='cubic-bezier(.22,1,.36,1)';
+
+function buildDetailHTML(w){
+  if(!w.detail)w.detail=[];if(!w.specs)w.specs={};if(!w.img)w.img='';
+  var imgs=[];if(w.gallery&&w.gallery.length>0)w.gallery.forEach(function(s){imgs.push(s)});else imgs.push(w.img);
+  var h='';
+  if(imgs.length>0){
+    h+='<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">';
+    imgs.forEach(function(s,i){h+='<div class="detail-hero-slide"><img src="'+s+'" alt="'+escHTML(w.title)+'"></div>'});
+    h+='</div>';
+    if(imgs.length>1){
+      h+='<div class="detail-hero-dots" id="heroDots">';imgs.forEach(function(_,i){h+='<div class="detail-hero-dot'+(i===0?' active':'')+'" data-idx="'+i+'"></div>'});h+='</div>';
+      h+='<div class="detail-hero-arrows"><button class="detail-hero-arrow prev" id="heroPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><button class="detail-hero-arrow next" id="heroNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>';
     }
-    html+=`</div>`;
+    h+='</div>';
   }
-  html+=`<div class="detail-title-section"><div class="detail-category">${w.category}</div><h2 class="detail-title">${w.title}</h2><p class="detail-desc">${w.detail.find(d=>d.t==='text')?.c||''}</p>${w.price?`<div class="detail-price">${w.price}</div>`:''}</div>`;
-  var metaItems='';
-  for(const[k,v]of Object.entries(w.specs)){if(v!=null&&v!=='')metaItems+=`<div class="detail-meta-item"><div class="detail-meta-label">${k}</div><div class="detail-meta-value">${v}</div></div>`}
-  if(metaItems)html+=`<div class="detail-meta">${metaItems}</div>`;
-  // Content blocks: show ALL detail items (images + text) below carousel
-  let sFT=false;html+='<div class="detail-content-blocks">';
-  w.detail.forEach(b=>{if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${b.src||w.img}" alt="${w.title}" loading="lazy"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
-  html+='</div>';
-  // Bottom nav — switch between works
-  html+=`<div class="detail-content-nav"><button class="detail-nav-pill" id="detailContentPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>上一个作品</button><button class="detail-nav-pill" id="detailContentNext">下一个作品<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>`;
-  detailBody.innerHTML=html;detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';updateDetailNav();
-  document.getElementById('detailContentPrev').onclick=()=>navDetail(-1);
-  document.getElementById('detailContentNext').onclick=()=>navDetail(1);
-  // Carousel logic
-  if(carouselImgs.length>1){
-    const track=document.getElementById('heroTrack'),dots=document.querySelectorAll('#heroDots .detail-hero-dot');
-    let curSlide=0;
-    function goSlide(i){
-      curSlide=i;track.scrollTo({left:track.clientWidth*i,behavior:'smooth'});
-      dots.forEach((d,j)=>d.classList.toggle('active',j===i));
-    }
-    document.getElementById('heroPrev').onclick=()=>{if(curSlide>0)goSlide(curSlide-1)};
-    document.getElementById('heroNext').onclick=()=>{if(curSlide<carouselImgs.length-1)goSlide(curSlide+1)};
-    dots.forEach(d=>d.onclick=()=>goSlide(parseInt(d.dataset.idx)));
-    track.addEventListener('scroll',()=>{
-      const i=Math.round(track.scrollLeft/track.clientWidth);
-      if(i!==curSlide){curSlide=i;dots.forEach((d,j)=>d.classList.toggle('active',j===i))}
-    });
-    // Keyboard arrows for hero carousel
-    document.addEventListener('keydown',function heroKey(e){
-      if(!detailOverlay.classList.contains('open'))return;
-      if(e.key==='ArrowLeft')goSlide(Math.max(0,curSlide-1));
-      if(e.key==='ArrowRight')goSlide(Math.min(carouselImgs.length-1,curSlide+1));
-    });
-  }
-  requestAnimationFrame(()=>{const blocks=detailBody.querySelectorAll('[data-reveal]');const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})},{threshold:.08,rootMargin:'0px 0px -32px 0px'});blocks.forEach(b=>obs.observe(b))});
+  h+='<div class="detail-title-section"><div class="detail-category">'+escHTML(w.category)+'</div><h2 class="detail-title">'+escHTML(w.title)+'</h2><p class="detail-desc">'+escHTML((w.detail.find(function(d){return d.t==='text'})||{}).c||'')+'</p>'+(w.price?'<div class="detail-price">'+escHTML(w.price)+'</div>':'')+'</div>';
+  var mi='';for(var k in w.specs){if(w.specs[k]!=null&&w.specs[k]!=='')mi+='<div class="detail-meta-item"><div class="detail-meta-label">'+escHTML(k)+'</div><div class="detail-meta-value">'+escHTML(w.specs[k])+'</div></div>'}
+  if(mi)h+='<div class="detail-meta">'+mi+'</div>';
+  var sFT=false;h+='<div class="detail-content-blocks">';
+  w.detail.forEach(function(b){if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')h+='<div class="detail-block-image" data-reveal><img src="'+(b.src||w.img)+'" alt="'+escHTML(w.title)+'" loading="lazy"></div>';else h+='<div class="detail-block-text" data-reveal><h3>'+escHTML(b.title)+'</h3><p>'+escHTML(b.c)+'</p></div>'});
+  h+='</div>';
+  h+='<div class="detail-content-nav"><button class="detail-nav-pill" id="detailContentPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>上一个作品</button><button class="detail-nav-pill" id="detailContentNext">下一个作品<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>';
+  return {html:h,imgs:imgs};
 }
 
+function escHTML(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+function doFLIP(card,onDone){
+  var imgEl=card.querySelector('.work-card-image');
+  if(!imgEl){onDone();return}
+  var first=imgEl.getBoundingClientRect();
+  var src=imgEl.querySelector('img').src||'';
+
+  // Render detail behind first
+  detailOverlay.classList.add('open','expanding');
+  document.body.style.overflow='hidden';
+
+  requestAnimationFrame(function(){
+    var hero=detailBody.querySelector('.detail-hero');
+    var last=hero?hero.getBoundingClientRect():{top:window.innerHeight*.08,left:window.innerWidth*.06,width:window.innerWidth*.88,height:window.innerHeight*.45};
+    var fly=document.createElement('div');
+    fly.className='fly-image';
+    fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:18px';
+    fly.innerHTML='<img src="'+src+'">';
+    document.body.appendChild(fly);
+
+    // Hide card image briefly
+    imgEl.style.opacity='0';
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        fly.classList.add('morphing');
+        fly.style.top=last.top+'px';
+        fly.style.left=last.left+'px';
+        fly.style.width=last.width+'px';
+        fly.style.height=last.height+'px';
+        fly.style.borderRadius='12px';
+
+        function done(){
+          fly.removeEventListener('transitionend',done);
+          if(document.body.contains(fly))fly.remove();
+          imgEl.style.opacity='';
+          detailOverlay.classList.remove('expanding');
+          if(onDone)onDone();
+        }
+        fly.addEventListener('transitionend',done);
+        setTimeout(function(){if(document.body.contains(fly))done()},700);
+      });
+    });
+  });
+}
+
+function reverseFLIP(card,onDone){
+  var hero=detailBody.querySelector('.detail-hero');
+  var imgEl=card?card.querySelector('.work-card-image'):null;
+  if(!hero||!imgEl){finish();return}
+  var first=hero.getBoundingClientRect();
+  var src=hero.querySelector('img').src||'';
+
+  var fly=document.createElement('div');
+  fly.className='fly-image';
+  fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:12px';
+  fly.innerHTML='<img src="'+src+'">';
+  document.body.appendChild(fly);
+
+  detailOverlay.classList.add('closing');
+  detailOverlay.classList.remove('open');
+  document.body.style.overflow='';
+  imgEl.style.opacity='0';
+
+  requestAnimationFrame(function(){
+    var last=imgEl.getBoundingClientRect();
+    fly.classList.add('morphing');
+    fly.style.top=last.top+'px';
+    fly.style.left=last.left+'px';
+    fly.style.width=last.width+'px';
+    fly.style.height=last.height+'px';
+    fly.style.borderRadius='18px';
+
+    function done(){
+      fly.removeEventListener('transitionend',done);
+      if(document.body.contains(fly))fly.remove();
+      imgEl.style.opacity='';
+      detailOverlay.classList.remove('closing');
+      finish();
+    }
+    fly.addEventListener('transitionend',done);
+    setTimeout(function(){if(document.body.contains(fly))done()},700);
+  });
+
+  function finish(){
+    detailBody.innerHTML='';
+    currentWorkId=null;
+    detailBackToTop.classList.remove('visible');
+    if(onDone)onDone();
+  }
+}
+
+async function openDetail(id){
+  works=await loadWorks();
+  var w=works.find(function(x){return x.id===id});if(!w)return;currentWorkId=id;
+  var card=document.querySelector('.work-card[data-id="'+id+'"]');
+
+  var info=buildDetailHTML(w);
+  detailBody.innerHTML=info.html;
+  detailBody.style.opacity='0';
+  updateDetailNav();
+  setupDetailInteractions(info.imgs);
+
+  if(!card){detailBody.style.opacity='1';detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';return}
+
+  doFLIP(card,function(){
+    detailBody.style.opacity='1';
+    detailBody.style.transition='opacity .35s';
+    detailOverlay.scrollTop=0;
+    // Reveal blocks on scroll
+    requestAnimationFrame(function(){
+      var blocks=detailBody.querySelectorAll('[data-reveal]');
+      var obs=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})
+      },{threshold:.08,rootMargin:'0px 0px -32px 0px'});
+      blocks.forEach(function(b){obs.observe(b)});
+    });
+  });
+}
+
+function setupDetailInteractions(imgs){
+  var cp=document.getElementById('detailContentPrev'),cn=document.getElementById('detailContentNext');
+  if(cp)cp.onclick=function(){navDetail(-1)};
+  if(cn)cn.onclick=function(){navDetail(1)};
+  if(imgs.length>1){
+    var track=document.getElementById('heroTrack'),dots=document.querySelectorAll('#heroDots .detail-hero-dot');
+    var cur=0;
+    function go(i){cur=i;track.scrollTo({left:track.clientWidth*i,behavior:'smooth'});dots.forEach(function(d,j){d.classList.toggle('active',j===i)})}
+    var hp=document.getElementById('heroPrev'),hn=document.getElementById('heroNext');
+    if(hp)hp.onclick=function(){if(cur>0)go(cur-1)};
+    if(hn)hn.onclick=function(){if(cur<imgs.length-1)go(cur+1)};
+    dots.forEach(function(d){d.onclick=function(){go(parseInt(d.dataset.idx))}});
+    track.addEventListener('scroll',function(){
+      var i=Math.round(track.scrollLeft/track.clientWidth);
+      if(i!==cur){cur=i;dots.forEach(function(d,j){d.classList.toggle('active',j===i)})}
+    },{passive:true});
+  }
+}
+
+function closeDetail(){
+  if(!currentWorkId){detailOverlay.classList.remove('open');document.body.style.overflow='';detailBody.innerHTML='';return}
+  var card=document.querySelector('.work-card[data-id="'+currentWorkId+'"]');
+  if(!card){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBody.innerHTML='';detailBackToTop.classList.remove('visible');return}
+  reverseFLIP(card);
+}
 function closeDetail(){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBackToTop.classList.remove('visible')}
 function updateDetailNav(){const idx=works.findIndex(w=>w.id===currentWorkId);const w=works[idx];const p=idx>0,n=idx<works.length-1;
   var cp=document.getElementById('detailContentPrev'),cn=document.getElementById('detailContentNext');
@@ -822,16 +936,27 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&detailOverlay.classList.contains('open')){closeDetail()}
 });
 
-window.addEventListener('scroll',()=>{
-  const y=window.scrollY;
-  if(y>200&&y>lastScrollY+6)nav.classList.add('hidden');
-  else if(y<lastScrollY-3)nav.classList.remove('hidden');
-  lastScrollY=y;
-  // Progressive nav blur — becomes more opaque as you scroll
-  const blurAmount=Math.min(y/600,1);
-  nav.style.background=`rgba(255,255,255,${0.72+blurAmount*0.2})`;
-  nav.style.backdropFilter=`blur(${28-blurAmount*8}px) saturate(${200-blurAmount*40}%)`;
-},{passive:true});
+// Enhanced Liquid Glass Nav — scroll-linked morph
+(function(){
+  var ticking=false;
+  window.addEventListener('scroll',function(){
+    if(ticking)return;ticking=true;
+    requestAnimationFrame(function(){
+      var y=window.scrollY;
+      if(y>200&&y>lastScrollY+6)nav.classList.add('hidden');
+      else if(y<lastScrollY-3)nav.classList.remove('hidden');
+      lastScrollY=y;
+      var t=Math.min(y/500,1);
+      nav.style.transform='translateX(-50%) scale('+(1-t*.06)+')';
+      nav.style.borderRadius=(28-t*10)+'px';
+      nav.style.background='rgba(255,255,255,'+(.72+t*.2)+')';
+      var bp=(28+t*12),st=(200-t*50);
+      nav.style.backdropFilter='blur('+bp+'px) saturate('+st+'%)';
+      nav.style.webkitBackdropFilter='blur('+bp+'px) saturate('+st+'%)';
+      ticking=false;
+    });
+  },{passive:true});
+})();
 
 // Navigation scroll-spy — highlight current section
 const heroSection=document.querySelector('.hero');
