@@ -928,8 +928,28 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&detailOverlay.classList.contains('open')){closeDetail()}
 });
 
-window.addEventListener('scroll',()=>{
-  const y=(function(){var t_=false;window.addEventListener("scroll",function(){if(t_)return;t_=true;requestAnimationFrame(function(){var y=window.scrollY;if(y>200&&y>lastScrollY+6)nav.classList.add("hidden");else if(y<lastScrollY-3)nav.classList.remove("hidden");lastScrollY=y;var t=Math.min(y/500,1);nav.style.transform="translateX(-50%) scale("+(1-t*.06)+")";nav.style.borderRadius=(28-t*10)+"px";nav.style.background="rgba(255,255,255,"+(.72+t*.2)+")";var bp=(28+t*12),st=(200-t*50);nav.style.backdropFilter="blur("+bp+"px) saturate("+st+"%)";nav.style.webkitBackdropFilter="blur("+bp+"px) saturate("+st+"%)";t_=false})},{passive:true})})();
+// Enhanced Liquid Glass Nav — scroll-linked morph
+(function(){
+  var ticking=false;
+  window.addEventListener('scroll',function(){
+    if(ticking)return;ticking=true;
+    requestAnimationFrame(function(){
+      var y=window.scrollY;
+      if(y>200&&y>lastScrollY+6)nav.classList.add('hidden');
+      else if(y<lastScrollY-3)nav.classList.remove('hidden');
+      lastScrollY=y;
+      var t=Math.min(y/500,1);
+      nav.style.transform='translateX(-50%) scale('+(1-t*.06)+')';
+      nav.style.borderRadius=(28-t*10)+'px';
+      nav.style.background='rgba(255,255,255,'+(.72+t*.2)+')';
+      var bp=(28+t*12),st=(200-t*50);
+      nav.style.backdropFilter='blur('+bp+'px) saturate('+st+'%)';
+      nav.style.webkitBackdropFilter='blur('+bp+'px) saturate('+st+'%)';
+      ticking=false;
+    });
+  },{passive:true});
+})();
+
 
 // Navigation scroll-spy — highlight current section
 const heroSection=document.querySelector('.hero');
