@@ -280,8 +280,6 @@ body::after{
   scroll-behavior:smooth;will-change:transform,opacity;
 }
 .detail-overlay.open{visibility:visible;opacity:1;transform:scale(1)}
-.detail-overlay.expanding{transition:none}
-.detail-overlay.closing{transition:visibility .4s,opacity .4s cubic-bezier(.4,0,.2,1),transform .4s cubic-bezier(.4,0,.2,1)}
 .detail-overlay::-webkit-scrollbar{width:4px}
 .detail-overlay::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:2px}
 
@@ -489,6 +487,11 @@ body::after{
   background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+.fly-image{position:fixed;z-index:300;pointer-events:none;overflow:hidden;will-change:width,height,top,left,border-radius;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.fly-image img{width:100%;height:100%;object-fit:cover;display:block}
+.fly-image.morphing{transition:all .55s cubic-bezier(.22,1,.36,1)}
+.detail-overlay.expanding{transition:none !important}
+.detail-overlay.closing{transition:visibility .4s,opacity .4s,transform .4s cubic-bezier(.4,0,.2,1)}
 </style>
 </head>
 <body>
@@ -524,7 +527,6 @@ body::after{
 
 <!-- Filter -->
 <section class="filter-section" id="works">
-  <div class="filter-indicator" id="filterIndicator"></div>
   <ul class="filter-list" id="filterList">
     <li><button class="filter-btn active" data-category="all"><span>全部作品</span></button></li>
     <li><button class="filter-btn" data-category="电商设计"><span>电商设计</span></button></li>
@@ -695,17 +697,7 @@ let works = DEFAULT_WORKS;
 (async function(){
   works = await loadWorks();
   renderGallery('all');
-  // Position filter indicator after render
-  setTimeout(function(){
-    var ind=document.getElementById('filterIndicator');
-    var btn=filterList.querySelector('.filter-btn.active');
-    if(ind&&btn){
-      var lr=filterList.getBoundingClientRect(),br=btn.getBoundingClientRect();
-      ind.style.left=(br.left-lr.left)+'px';
-      ind.style.width=br.width+'px';
-      ind.style.opacity='1';
-    }
-  },450);
+  setTimeout(function(){moveFilterIndicator(filterList.querySelector('.filter-btn.active'))},400);
   window.addEventListener('load',()=>renderGallery(activeFilter));
 })();
 
@@ -720,6 +712,7 @@ const galleryEl=document.getElementById('gallery'),filterList=document.getElemen
   detailBack=document.getElementById('detailBack'),detailCounter=document.getElementById('detailCounter'),
   detailTitleInline=document.getElementById('detailTitleInline'),
   detailBackToTop=document.getElementById('detailBackToTop'),nav=document.getElementById('nav');
+function moveFilterIndicator(btn){var ind=document.getElementById('filterIndicator');if(!ind||!btn)return;var lr=filterList.getBoundingClientRect(),br=btn.getBoundingClientRect();ind.style.left=(br.left-lr.left)+'px';ind.style.width=br.width+'px';ind.style.opacity='1'}
 
 async function renderGallery(filter){
   works=await loadWorks();
@@ -738,18 +731,6 @@ async function renderGallery(filter){
     </div>
   `).join('');
   galleryEl.querySelectorAll('.work-card').forEach(card=>{card.addEventListener('click',()=>openDetail(parseInt(card.dataset.id)))});
-  // Init filter indicator position
-  const indicator=document.getElementById('filterIndicator');
-  if(indicator){
-    const activeBtn=filterList.querySelector('.filter-btn.active');
-    if(activeBtn){
-      const listRect=filterList.getBoundingClientRect();
-      const btnRect=activeBtn.getBoundingClientRect();
-      indicator.style.left=(btnRect.left-listRect.left)+'px';
-      indicator.style.width=btnRect.width+'px';
-    }
-    indicator.style.opacity='1';
-  }
   requestAnimationFrame(()=>{
     const cards=galleryEl.querySelectorAll('.work-card');
     const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})},{threshold:.06,rootMargin:'0px 0px -24px 0px'});
@@ -762,25 +743,15 @@ filterList.addEventListener('click',e=>{
   if(!btn||btn.dataset.category===activeFilter)return;
   filterList.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');activeFilter=btn.dataset.category;
-  // Slide liquid glass indicator
-  const ind=document.getElementById('filterIndicator');
-  if(ind){
-    const lr=filterList.getBoundingClientRect(),br=btn.getBoundingClientRect();
-    ind.style.left=(br.left-lr.left)+'px';
-    ind.style.width=br.width+'px';
-  }
   const cards=galleryEl.querySelectorAll('.work-card');
   cards.forEach((c,i)=>{c.style.transition='opacity .2s,transform .2s';c.style.transitionDelay=`${i*.015}s`;c.style.opacity='0';c.style.transform='translateY(10px)'});
   setTimeout(()=>renderGallery(activeFilter),280);
 });
 
-  setTimeout(()=>renderGallery(activeFilter),280);
-});
 
 // ============================================
 // Shared Element Transition — FLIP card expand
 // ============================================
-const detailSpring='cubic-bezier(.22,1,.36,1)';
 
 function buildDetailHTML(w){
   if(!w.detail)w.detail=[];if(!w.specs)w.specs={};if(!w.img)w.img='';
@@ -788,7 +759,7 @@ function buildDetailHTML(w){
   var h='';
   if(imgs.length>0){
     h+='<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">';
-    imgs.forEach(function(s,i){h+='<div class="detail-hero-slide"><img src="'+s+'" alt="'+escHTML(w.title)+'"></div>'});
+    imgs.forEach(function(s,i){h+='<div class="detail-hero-slide"><img src="'+s+'" alt="'+esc(w.title)+'"></div>'});
     h+='</div>';
     if(imgs.length>1){
       h+='<div class="detail-hero-dots" id="heroDots">';imgs.forEach(function(_,i){h+='<div class="detail-hero-dot'+(i===0?' active':'')+'" data-idx="'+i+'"></div>'});h+='</div>';
@@ -796,17 +767,18 @@ function buildDetailHTML(w){
     }
     h+='</div>';
   }
-  h+='<div class="detail-title-section"><div class="detail-category">'+escHTML(w.category)+'</div><h2 class="detail-title">'+escHTML(w.title)+'</h2><p class="detail-desc">'+escHTML((w.detail.find(function(d){return d.t==='text'})||{}).c||'')+'</p>'+(w.price?'<div class="detail-price">'+escHTML(w.price)+'</div>':'')+'</div>';
-  var mi='';for(var k in w.specs){if(w.specs[k]!=null&&w.specs[k]!=='')mi+='<div class="detail-meta-item"><div class="detail-meta-label">'+escHTML(k)+'</div><div class="detail-meta-value">'+escHTML(w.specs[k])+'</div></div>'}
+  var desc=(w.detail.find(function(d){return d.t==='text'})||{}).c||'';
+  h+='<div class="detail-title-section"><div class="detail-category">'+esc(w.category)+'</div><h2 class="detail-title">'+esc(w.title)+'</h2><p class="detail-desc">'+esc(desc)+'</p>'+(w.price?'<div class="detail-price">'+esc(w.price)+'</div>':'')+'</div>';
+  var mi='';for(var k in w.specs){if(w.specs[k]!=null&&w.specs[k]!=='')mi+='<div class="detail-meta-item"><div class="detail-meta-label">'+esc(k)+'</div><div class="detail-meta-value">'+esc(w.specs[k])+'</div></div>'}
   if(mi)h+='<div class="detail-meta">'+mi+'</div>';
   var sFT=false;h+='<div class="detail-content-blocks">';
-  w.detail.forEach(function(b){if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')h+='<div class="detail-block-image" data-reveal><img src="'+(b.src||w.img)+'" alt="'+escHTML(w.title)+'" loading="lazy"></div>';else h+='<div class="detail-block-text" data-reveal><h3>'+escHTML(b.title)+'</h3><p>'+escHTML(b.c)+'</p></div>'});
+  w.detail.forEach(function(b){if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')h+='<div class="detail-block-image" data-reveal><img src="'+(b.src||w.img)+'" alt="'+esc(w.title)+'" loading="lazy"></div>';else h+='<div class="detail-block-text" data-reveal><h3>'+esc(b.title)+'</h3><p>'+esc(b.c)+'</p></div>'});
   h+='</div>';
   h+='<div class="detail-content-nav"><button class="detail-nav-pill" id="detailContentPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>上一个作品</button><button class="detail-nav-pill" id="detailContentNext">下一个作品<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>';
   return {html:h,imgs:imgs};
 }
 
-function escHTML(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+var esc=function(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML};
 
 function doFLIP(card,onDone){
   var imgEl=card.querySelector('.work-card-image');
@@ -814,31 +786,25 @@ function doFLIP(card,onDone){
   var first=imgEl.getBoundingClientRect();
   var src=imgEl.querySelector('img').src||'';
 
-  // 1. Create fly image BEFORE overlay opens — zero flash
   var fly=document.createElement('div');
   fly.className='fly-image';
   fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:18px';
   fly.innerHTML='<img src="'+src+'">';
   document.body.appendChild(fly);
 
-  // 2. Hide card image, then open overlay behind fly
   imgEl.style.opacity='0';
   detailOverlay.classList.add('open','expanding');
   document.body.style.overflow='hidden';
 
-  // 3. Get target after layout settles, then animate
   requestAnimationFrame(function(){
     var hero=detailBody.querySelector('.detail-hero');
     var last=hero?hero.getBoundingClientRect():{top:window.innerHeight*.08,left:window.innerWidth*.06,width:window.innerWidth*.88,height:window.innerHeight*.45};
-
-    // Trigger CSS transition by adding morphing class + new position
     fly.classList.add('morphing');
     fly.style.top=last.top+'px';
     fly.style.left=last.left+'px';
     fly.style.width=last.width+'px';
     fly.style.height=last.height+'px';
     fly.style.borderRadius='12px';
-
     function done(){
       fly.removeEventListener('transitionend',done);
       if(document.body.contains(fly))fly.remove();
@@ -857,18 +823,15 @@ function reverseFLIP(card,onDone){
   if(!hero||!imgEl){finish();return}
   var first=hero.getBoundingClientRect();
   var src=hero.querySelector('img').src||'';
-
   var fly=document.createElement('div');
   fly.className='fly-image';
   fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:12px';
   fly.innerHTML='<img src="'+src+'">';
   document.body.appendChild(fly);
-
   detailOverlay.classList.add('closing');
   detailOverlay.classList.remove('open');
   document.body.style.overflow='';
   imgEl.style.opacity='0';
-
   requestAnimationFrame(function(){
     var last=imgEl.getBoundingClientRect();
     fly.classList.add('morphing');
@@ -877,7 +840,6 @@ function reverseFLIP(card,onDone){
     fly.style.width=last.width+'px';
     fly.style.height=last.height+'px';
     fly.style.borderRadius='18px';
-
     function done(){
       fly.removeEventListener('transitionend',done);
       if(document.body.contains(fly))fly.remove();
@@ -888,7 +850,6 @@ function reverseFLIP(card,onDone){
     fly.addEventListener('transitionend',done);
     setTimeout(function(){if(document.body.contains(fly))done()},700);
   });
-
   function finish(){
     detailBody.innerHTML='';
     currentWorkId=null;
@@ -897,39 +858,11 @@ function reverseFLIP(card,onDone){
   }
 }
 
-async function openDetail(id){
-  works=await loadWorks();
-  var w=works.find(function(x){return x.id===id});if(!w)return;currentWorkId=id;
-  var card=document.querySelector('.work-card[data-id="'+id+'"]');
-
-  var info=buildDetailHTML(w);
-  detailBody.innerHTML=info.html;
-  detailBody.style.opacity='0';
-  updateDetailNav();
-  setupDetailInteractions(info.imgs);
-
-  if(!card){detailBody.style.opacity='1';detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';return}
-
-  doFLIP(card,function(){
-    detailBody.style.opacity='1';
-    detailBody.style.transition='opacity .35s';
-    detailOverlay.scrollTop=0;
-    // Reveal blocks on scroll
-    requestAnimationFrame(function(){
-      var blocks=detailBody.querySelectorAll('[data-reveal]');
-      var obs=new IntersectionObserver(function(entries){
-        entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})
-      },{threshold:.08,rootMargin:'0px 0px -32px 0px'});
-      blocks.forEach(function(b){obs.observe(b)});
-    });
-  });
-}
-
 function setupDetailInteractions(imgs){
   var cp=document.getElementById('detailContentPrev'),cn=document.getElementById('detailContentNext');
   if(cp)cp.onclick=function(){navDetail(-1)};
   if(cn)cn.onclick=function(){navDetail(1)};
-  if(imgs.length>1){
+  if(imgs&&imgs.length>1){
     var track=document.getElementById('heroTrack'),dots=document.querySelectorAll('#heroDots .detail-hero-dot');
     var cur=0;
     function go(i){cur=i;track.scrollTo({left:track.clientWidth*i,behavior:'smooth'});dots.forEach(function(d,j){d.classList.toggle('active',j===i)})}
@@ -944,13 +877,38 @@ function setupDetailInteractions(imgs){
   }
 }
 
+async function openDetail(id){
+  works=await loadWorks();
+  var w=works.find(function(x){return x.id===id});if(!w)return;currentWorkId=id;
+  var card=document.querySelector('.work-card[data-id="'+id+'"]');
+  var info=buildDetailHTML(w);
+  detailBody.innerHTML=info.html;
+  detailBody.style.opacity='0';
+  updateDetailNav();
+  setupDetailInteractions(info.imgs);
+  if(!card){detailBody.style.opacity='1';detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';return}
+  doFLIP(card,function(){
+    detailBody.style.opacity='1';
+    detailBody.style.transition='opacity .35s';
+    detailOverlay.scrollTop=0;
+    requestAnimationFrame(function(){
+      var blocks=detailBody.querySelectorAll('[data-reveal]');
+      var obs=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})
+      },{threshold:.08,rootMargin:'0px 0px -32px 0px'});
+      blocks.forEach(function(b){obs.observe(b)});
+    });
+  });
+}
+
 function closeDetail(){
   if(!currentWorkId){detailOverlay.classList.remove('open');document.body.style.overflow='';detailBody.innerHTML='';return}
   var card=document.querySelector('.work-card[data-id="'+currentWorkId+'"]');
   if(!card){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBody.innerHTML='';detailBackToTop.classList.remove('visible');return}
   reverseFLIP(card);
 }
-function closeDetail(){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBackToTop.classList.remove('visible')}
+
+
 function updateDetailNav(){const idx=works.findIndex(w=>w.id===currentWorkId);const w=works[idx];const p=idx>0,n=idx<works.length-1;
   var cp=document.getElementById('detailContentPrev'),cn=document.getElementById('detailContentNext');
   if(cp){cp.style.opacity=p?'1':'.35';cp.style.pointerEvents=p?'auto':'none'}
@@ -970,27 +928,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&detailOverlay.classList.contains('open')){closeDetail()}
 });
 
-// Enhanced Liquid Glass Nav — scroll-linked morph
-(function(){
-  var ticking=false;
-  window.addEventListener('scroll',function(){
-    if(ticking)return;ticking=true;
-    requestAnimationFrame(function(){
-      var y=window.scrollY;
-      if(y>200&&y>lastScrollY+6)nav.classList.add('hidden');
-      else if(y<lastScrollY-3)nav.classList.remove('hidden');
-      lastScrollY=y;
-      var t=Math.min(y/500,1);
-      nav.style.transform='translateX(-50%) scale('+(1-t*.06)+')';
-      nav.style.borderRadius=(28-t*10)+'px';
-      nav.style.background='rgba(255,255,255,'+(.72+t*.2)+')';
-      var bp=(28+t*12),st=(200-t*50);
-      nav.style.backdropFilter='blur('+bp+'px) saturate('+st+'%)';
-      nav.style.webkitBackdropFilter='blur('+bp+'px) saturate('+st+'%)';
-      ticking=false;
-    });
-  },{passive:true});
-})();
+window.addEventListener('scroll',()=>{
+  const y=(function(){var t_=false;window.addEventListener("scroll",function(){if(t_)return;t_=true;requestAnimationFrame(function(){var y=window.scrollY;if(y>200&&y>lastScrollY+6)nav.classList.add("hidden");else if(y<lastScrollY-3)nav.classList.remove("hidden");lastScrollY=y;var t=Math.min(y/500,1);nav.style.transform="translateX(-50%) scale("+(1-t*.06)+")";nav.style.borderRadius=(28-t*10)+"px";nav.style.background="rgba(255,255,255,"+(.72+t*.2)+")";var bp=(28+t*12),st=(200-t*50);nav.style.backdropFilter="blur("+bp+"px) saturate("+st+"%)";nav.style.webkitBackdropFilter="blur("+bp+"px) saturate("+st+"%)";t_=false})},{passive:true})})();
 
 // Navigation scroll-spy — highlight current section
 const heroSection=document.querySelector('.hero');
