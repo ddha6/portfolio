@@ -781,24 +781,39 @@ function buildDetailHTML(w){
 var esc=function(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML};
 
 function doFLIP(card,onDone){
+  var first=card.getBoundingClientRect();
   var imgEl=card.querySelector('.work-card-image');
-  if(!imgEl){onDone();return}
-  var first=imgEl.getBoundingClientRect();
-  var src=imgEl.querySelector('img').src||'';
+  var img=imgEl?imgEl.querySelector('img'):null;
+  var src=img?img.src:'';
+  var title=(card.querySelector('.work-card-title')||{}).textContent||'';
+  var cat=(card.querySelector('.work-card-category')||{}).textContent||'';
+  var price=(card.querySelector('.work-card-price')||{}).textContent||'';
 
+  // Fly: full card clone (image + info)
   var fly=document.createElement('div');
   fly.className='fly-image';
-  fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:18px';
-  fly.innerHTML='<img src="'+src+'">';
+  fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:18px;overflow:hidden';
+  fly.innerHTML='<div style="width:100%;height:100%;display:flex;flex-direction:column;background:#fff"><div style="flex:1;overflow:hidden"><img src="'+src+'" style="width:100%;height:100%;object-fit:cover;display:block"></div><div style="padding:10px 14px 11px;background:#fff"><div style="font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#6e6e73;margin-bottom:2px">'+esc(cat)+'</div><div style="font-size:13px;font-weight:530;letter-spacing:-.01em;line-height:1.3;color:#1d1d1f">'+esc(title)+'</div>'+(price?'<div style="font-size:16px;font-weight:700;color:#ff1744;margin-top:2px">'+esc(price)+'</div>':'')+'</div></div>';
   document.body.appendChild(fly);
 
-  imgEl.style.opacity='0';
+  // Hide card, open overlay behind
+  card.style.opacity='0';
   detailOverlay.classList.add('open','expanding');
   document.body.style.overflow='hidden';
 
   requestAnimationFrame(function(){
     var hero=detailBody.querySelector('.detail-hero');
-    var last=hero?hero.getBoundingClientRect():{top:window.innerHeight*.08,left:window.innerWidth*.06,width:window.innerWidth*.88,height:window.innerHeight*.45};
+    var titleSec=detailBody.querySelector('.detail-title-section');
+    // Target spans hero + title section
+    var last;
+    if(hero){
+      var hr=hero.getBoundingClientRect();
+      last={top:hr.top,left:hr.left,width:hr.width,height:hr.height};
+    }else{
+      last={top:window.innerHeight*.06,left:window.innerWidth*.06,width:window.innerWidth*.88,height:window.innerHeight*.5};
+    }
+    if(titleSec){var tr=titleSec.getBoundingClientRect();last.height=tr.bottom-last.top}
+
     fly.classList.add('morphing');
     fly.style.top=last.top+'px';
     fly.style.left=last.left+'px';
@@ -808,7 +823,7 @@ function doFLIP(card,onDone){
     function done(){
       fly.removeEventListener('transitionend',done);
       if(document.body.contains(fly))fly.remove();
-      imgEl.style.opacity='';
+      card.style.opacity='';
       detailOverlay.classList.remove('expanding');
       if(onDone)onDone();
     }
@@ -817,23 +832,29 @@ function doFLIP(card,onDone){
   });
 }
 
+
 function reverseFLIP(card,onDone){
   var hero=detailBody.querySelector('.detail-hero');
-  var imgEl=card?card.querySelector('.work-card-image'):null;
-  if(!hero||!imgEl){finish();return}
-  var first=hero.getBoundingClientRect();
-  var src=hero.querySelector('img').src||'';
+  var titleSec=detailBody.querySelector('.detail-title-section');
+  if(!hero||!card){finish();return}
+  var hr=hero.getBoundingClientRect();
+  var first={top:hr.top,left:hr.left,width:hr.width,height:hr.height};
+  if(titleSec){var tr=titleSec.getBoundingClientRect();first.height=tr.bottom-first.top}
+  var src=(hero.querySelector('img')||{}).src||'';
+
   var fly=document.createElement('div');
   fly.className='fly-image';
-  fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:12px';
-  fly.innerHTML='<img src="'+src+'">';
+  fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:12px;overflow:hidden;background:#fff';
+  fly.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;display:block">';
   document.body.appendChild(fly);
+
   detailOverlay.classList.add('closing');
   detailOverlay.classList.remove('open');
   document.body.style.overflow='';
-  imgEl.style.opacity='0';
+  card.style.opacity='0';
+
   requestAnimationFrame(function(){
-    var last=imgEl.getBoundingClientRect();
+    var last=card.getBoundingClientRect();
     fly.classList.add('morphing');
     fly.style.top=last.top+'px';
     fly.style.left=last.left+'px';
@@ -843,7 +864,7 @@ function reverseFLIP(card,onDone){
     function done(){
       fly.removeEventListener('transitionend',done);
       if(document.body.contains(fly))fly.remove();
-      imgEl.style.opacity='';
+      card.style.opacity='';
       detailOverlay.classList.remove('closing');
       finish();
     }
@@ -857,6 +878,7 @@ function reverseFLIP(card,onDone){
     if(onDone)onDone();
   }
 }
+
 
 function setupDetailInteractions(imgs){
   var cp=document.getElementById('detailContentPrev'),cn=document.getElementById('detailContentNext');
