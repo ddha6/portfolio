@@ -487,11 +487,6 @@ body::after{
   background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.fly-image{position:fixed;z-index:300;pointer-events:none;overflow:hidden;will-change:width,height,top,left,border-radius;box-shadow:0 20px 60px rgba(0,0,0,.18)}
-.fly-image img{width:100%;height:100%;object-fit:cover;display:block}
-.fly-image.morphing{transition:transform .5s cubic-bezier(.22,1,.36,1),border-radius .5s cubic-bezier(.22,1,.36,1)}
-.detail-overlay.expanding{transition:none !important}
-.detail-overlay.closing{transition:visibility .4s,opacity .4s,transform .4s cubic-bezier(.4,0,.2,1)}
 </style>
 </head>
 <body>
@@ -748,191 +743,70 @@ filterList.addEventListener('click',e=>{
   setTimeout(()=>renderGallery(activeFilter),280);
 });
 
-
-// ============================================
-// Shared Element Transition — FLIP card expand
-// ============================================
-
-function buildDetailHTML(w){
-  if(!w.detail)w.detail=[];if(!w.specs)w.specs={};if(!w.img)w.img='';
-  var imgs=[];if(w.gallery&&w.gallery.length>0)w.gallery.forEach(function(s){imgs.push(s)});else imgs.push(w.img);
-  var h='';
-  if(imgs.length>0){
-    h+='<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">';
-    imgs.forEach(function(s,i){h+='<div class="detail-hero-slide"><img src="'+s+'" alt="'+esc(w.title)+'"></div>'});
-    h+='</div>';
-    if(imgs.length>1){
-      h+='<div class="detail-hero-dots" id="heroDots">';imgs.forEach(function(_,i){h+='<div class="detail-hero-dot'+(i===0?' active':'')+'" data-idx="'+i+'"></div>'});h+='</div>';
-      h+='<div class="detail-hero-arrows"><button class="detail-hero-arrow prev" id="heroPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><button class="detail-hero-arrow next" id="heroNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>';
-    }
-    h+='</div>';
-  }
-  var desc=(w.detail.find(function(d){return d.t==='text'})||{}).c||'';
-  h+='<div class="detail-title-section"><div class="detail-category">'+esc(w.category)+'</div><h2 class="detail-title">'+esc(w.title)+'</h2><p class="detail-desc">'+esc(desc)+'</p>'+(w.price?'<div class="detail-price">'+esc(w.price)+'</div>':'')+'</div>';
-  var mi='';for(var k in w.specs){if(w.specs[k]!=null&&w.specs[k]!=='')mi+='<div class="detail-meta-item"><div class="detail-meta-label">'+esc(k)+'</div><div class="detail-meta-value">'+esc(w.specs[k])+'</div></div>'}
-  if(mi)h+='<div class="detail-meta">'+mi+'</div>';
-  var sFT=false;h+='<div class="detail-content-blocks">';
-  w.detail.forEach(function(b){if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')h+='<div class="detail-block-image" data-reveal><img src="'+(b.src||w.img)+'" alt="'+esc(w.title)+'" loading="lazy"></div>';else h+='<div class="detail-block-text" data-reveal><h3>'+esc(b.title)+'</h3><p>'+esc(b.c)+'</p></div>'});
-  h+='</div>';
-  h+='<div class="detail-content-nav"><button class="detail-nav-pill" id="detailContentPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>上一个作品</button><button class="detail-nav-pill" id="detailContentNext">下一个作品<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>';
-  return {html:h,imgs:imgs};
-}
-
-var esc=function(s){var d=document.createElement('dfunction doFLIP(card,onDone){
-  var imgEl=card.querySelector('.work-card-image');
-  if(!imgEl){onDone();return}
-  var first=imgEl.getBoundingClientRect();
-  var src=imgEl.querySelector('img').src||'';
-
-  // Create fly at card position, rendered before anything else
-  var fly=document.createElement('div');
-  fly.className='fly-image';
-  fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:18px';
-  fly.innerHTML='<img src="'+src+'">';
-  document.body.appendChild(fly);
-
-  // Open overlay behind fly (instant, no transition)
-  detailOverlay.classList.add('open','expanding');
-  document.body.style.overflow='hidden';
-  // Hide card image only after fly covers it
-  imgEl.style.opacity='0';
-
-  // Get target position after layout
-  requestAnimationFrame(function(){
-    var hero=detailBody.querySelector('.detail-hero');
-    var last=hero?hero.getBoundingClientRect():{top:window.innerHeight*.08,left:window.innerWidth*.06,width:window.innerWidth*.88,height:window.innerHeight*.45};
-
-    // Use transform for GPU-accelerated, zero-jitter animation
-    var scaleX=last.width/first.width;
-    var scaleY=last.height/first.height;
-    var translateX=last.left-first.left;
-    var translateY=last.top-first.top;
-
-    fly.classList.add('morphing');
-    fly.style.transform='translate('+translateX+'px,'+translateY+'px) scale('+scaleX+','+scaleY+')';
-    fly.style.transformOrigin='top left';
-    fly.style.borderRadius='12px';
-
-    function done(){
-      fly.removeEventListener('transitionend',done);
-      if(document.body.contains(fly))fly.remove();
-      imgEl.style.opacity='';
-      detailOverlay.classList.remove('expanding');
-      if(onDone)onDone();
-    }
-    fly.addEventListener('transitionend',done);
-    setTimeout(function(){if(document.body.contains(fly))done()},600);
-  });
-}
-
-
-function reverseFLIP(card,onDone){
-  var hero=detailBody.querySelector('.detail-hero');
-  var imgEl=card?card.querySelector('.work-card-image'):null;
-  if(!hero||!imgEl){finish();return}
-  var first=hero.getBoundingClientRect();
-  var src=hero.querySelector('img').src||'';
-
-  var fly=document.createElement('div');
-  fly.className='fly-image';
-  fly.style.cssText='top:'+first.top+'px;left:'+first.left+'px;width:'+first.width+'px;height:'+first.height+'px;border-radius:12px';
-  fly.innerHTML='<img src="'+src+'">';
-  document.body.appendChild(fly);
-
-  // Hide overlay and card image
-  detailOverlay.classList.add('closing');
-  detailOverlay.classList.remove('open');
-  document.body.style.overflow='';
-  imgEl.style.opacity='0';
-
-  requestAnimationFrame(function(){
-    var last=imgEl.getBoundingClientRect();
-    var scaleX=last.width/first.width;
-    var scaleY=last.height/first.height;
-    var translateX=last.left-first.left;
-    var translateY=last.top-first.top;
-
-    fly.classList.add('morphing');
-    fly.style.transform='translate('+translateX+'px,'+translateY+'px) scale('+scaleX+','+scaleY+')';
-    fly.style.transformOrigin='top left';
-    fly.style.borderRadius='18px';
-
-    function done(){
-      fly.removeEventListener('transitionend',done);
-      if(document.body.contains(fly))fly.remove();
-      imgEl.style.opacity='';
-      detailOverlay.classList.remove('closing');
-      finish();
-    }
-    fly.addEventListener('transitionend',done);
-    setTimeout(function(){if(document.body.contains(fly))done()},600);
-  });
-  function finish(){
-    detailBody.innerHTML='';
-    currentWorkId=null;
-    detailBackToTop.classList.remove('visible');
-    if(onDone)onDone();
-  }
-}
-
-
-ove('visible');
-    if(onDone)onDone();
-  }
-}
-
-
-function setupDetailInteractions(imgs){
-  var cp=document.getElementById('detailContentPrev'),cn=document.getElementById('detailContentNext');
-  if(cp)cp.onclick=function(){navDetail(-1)};
-  if(cn)cn.onclick=function(){navDetail(1)};
-  if(imgs&&imgs.length>1){
-    var track=document.getElementById('heroTrack'),dots=document.querySelectorAll('#heroDots .detail-hero-dot');
-    var cur=0;
-    function go(i){cur=i;track.scrollTo({left:track.clientWidth*i,behavior:'smooth'});dots.forEach(function(d,j){d.classList.toggle('active',j===i)})}
-    var hp=document.getElementById('heroPrev'),hn=document.getElementById('heroNext');
-    if(hp)hp.onclick=function(){if(cur>0)go(cur-1)};
-    if(hn)hn.onclick=function(){if(cur<imgs.length-1)go(cur+1)};
-    dots.forEach(function(d){d.onclick=function(){go(parseInt(d.dataset.idx))}});
-    track.addEventListener('scroll',function(){
-      var i=Math.round(track.scrollLeft/track.clientWidth);
-      if(i!==cur){cur=i;dots.forEach(function(d,j){d.classList.toggle('active',j===i)})}
-    },{passive:true});
-  }
-}
-
 async function openDetail(id){
   works=await loadWorks();
-  var w=works.find(function(x){return x.id===id});if(!w)return;currentWorkId=id;
-  var card=document.querySelector('.work-card[data-id="'+id+'"]');
-  var info=buildDetailHTML(w);
-  detailBody.innerHTML=info.html;
-  detailBody.style.opacity='0';
-  updateDetailNav();
-  setupDetailInteractions(info.imgs);
-  if(!card){detailBody.style.opacity='1';detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';return}
-  doFLIP(card,function(){
-    detailBody.style.opacity='1';
-    detailBody.style.transition='opacity .35s';
-    detailOverlay.scrollTop=0;
-    requestAnimationFrame(function(){
-      var blocks=detailBody.querySelectorAll('[data-reveal]');
-      var obs=new IntersectionObserver(function(entries){
-        entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})
-      },{threshold:.08,rootMargin:'0px 0px -32px 0px'});
-      blocks.forEach(function(b){obs.observe(b)});
+  const w=works.find(x=>x.id===id);if(!w)return;currentWorkId=id;
+  if(!w.detail)w.detail=[];
+  if(!w.specs)w.specs={};
+  if(!w.img)w.img='';
+  // Carousel: only gallery images (or main img as fallback), NOT detail blocks
+  const carouselImgs=[];
+  if(w.gallery&&w.gallery.length>0){w.gallery.forEach(src=>carouselImgs.push(src))}
+  else{carouselImgs.push(w.img)}
+  let html='';
+  if(carouselImgs.length>0){
+    html+=`<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">`;
+    carouselImgs.forEach((src,i)=>{
+      html+=`<div class="detail-hero-slide"><img src="${src}" alt="${w.title}"></div>`;
     });
-  });
+    html+=`</div>`;
+    if(carouselImgs.length>1){
+      html+=`<div class="detail-hero-dots" id="heroDots">`;
+      carouselImgs.forEach((_,i)=>html+=`<div class="detail-hero-dot${i===0?' active':''}" data-idx="${i}"></div>`);
+      html+=`</div>`;
+      html+=`<div class="detail-hero-arrows"><button class="detail-hero-arrow prev" id="heroPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><button class="detail-hero-arrow next" id="heroNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`<div class="detail-title-section"><div class="detail-category">${w.category}</div><h2 class="detail-title">${w.title}</h2><p class="detail-desc">${w.detail.find(d=>d.t==='text')?.c||''}</p>${w.price?`<div class="detail-price">${w.price}</div>`:''}</div>`;
+  var metaItems='';
+  for(const[k,v]of Object.entries(w.specs)){if(v!=null&&v!=='')metaItems+=`<div class="detail-meta-item"><div class="detail-meta-label">${k}</div><div class="detail-meta-value">${v}</div></div>`}
+  if(metaItems)html+=`<div class="detail-meta">${metaItems}</div>`;
+  // Content blocks: show ALL detail items (images + text) below carousel
+  let sFT=false;html+='<div class="detail-content-blocks">';
+  w.detail.forEach(b=>{if(b.t==='text'&&!sFT){sFT=true;return}if(b.t==='image')html+=`<div class="detail-block-image" data-reveal><img src="${b.src||w.img}" alt="${w.title}" loading="lazy"></div>`;else html+=`<div class="detail-block-text" data-reveal><h3>${b.title}</h3><p>${b.c}</p></div>`});
+  html+='</div>';
+  // Bottom nav — switch between works
+  html+=`<div class="detail-content-nav"><button class="detail-nav-pill" id="detailContentPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>上一个作品</button><button class="detail-nav-pill" id="detailContentNext">下一个作品<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button></div>`;
+  detailBody.innerHTML=html;detailOverlay.classList.add('open');detailOverlay.scrollTop=0;document.body.style.overflow='hidden';updateDetailNav();
+  document.getElementById('detailContentPrev').onclick=()=>navDetail(-1);
+  document.getElementById('detailContentNext').onclick=()=>navDetail(1);
+  // Carousel logic
+  if(carouselImgs.length>1){
+    const track=document.getElementById('heroTrack'),dots=document.querySelectorAll('#heroDots .detail-hero-dot');
+    let curSlide=0;
+    function goSlide(i){
+      curSlide=i;track.scrollTo({left:track.clientWidth*i,behavior:'smooth'});
+      dots.forEach((d,j)=>d.classList.toggle('active',j===i));
+    }
+    document.getElementById('heroPrev').onclick=()=>{if(curSlide>0)goSlide(curSlide-1)};
+    document.getElementById('heroNext').onclick=()=>{if(curSlide<carouselImgs.length-1)goSlide(curSlide+1)};
+    dots.forEach(d=>d.onclick=()=>goSlide(parseInt(d.dataset.idx)));
+    track.addEventListener('scroll',()=>{
+      const i=Math.round(track.scrollLeft/track.clientWidth);
+      if(i!==curSlide){curSlide=i;dots.forEach((d,j)=>d.classList.toggle('active',j===i))}
+    });
+    // Keyboard arrows for hero carousel
+    document.addEventListener('keydown',function heroKey(e){
+      if(!detailOverlay.classList.contains('open'))return;
+      if(e.key==='ArrowLeft')goSlide(Math.max(0,curSlide-1));
+      if(e.key==='ArrowRight')goSlide(Math.min(carouselImgs.length-1,curSlide+1));
+    });
+  }
+  requestAnimationFrame(()=>{const blocks=detailBody.querySelectorAll('[data-reveal]');const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');obs.unobserve(e.target)}})},{threshold:.08,rootMargin:'0px 0px -32px 0px'});blocks.forEach(b=>obs.observe(b))});
 }
 
-function closeDetail(){
-  if(!currentWorkId){detailOverlay.classList.remove('open');document.body.style.overflow='';detailBody.innerHTML='';return}
-  var card=document.querySelector('.work-card[data-id="'+currentWorkId+'"]');
-  if(!card){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBody.innerHTML='';detailBackToTop.classList.remove('visible');return}
-  reverseFLIP(card);
-}
-
-
+function closeDetail(){detailOverlay.classList.remove('open');document.body.style.overflow='';currentWorkId=null;detailBackToTop.classList.remove('visible')}
 function updateDetailNav(){const idx=works.findIndex(w=>w.id===currentWorkId);const w=works[idx];const p=idx>0,n=idx<works.length-1;
   var cp=document.getElementById('detailContentPrev'),cn=document.getElementById('detailContentNext');
   if(cp){cp.style.opacity=p?'1':'.35';cp.style.pointerEvents=p?'auto':'none'}
@@ -973,7 +847,6 @@ document.addEventListener('keydown',e=>{
     });
   },{passive:true});
 })();
-
 
 // Navigation scroll-spy — highlight current section
 const heroSection=document.querySelector('.hero');
