@@ -2,9 +2,6 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>作品管理后台</title>
 <style>
@@ -54,7 +51,7 @@ body{
   cursor:pointer;transition:all .2s;position:relative;
 }
 .work-list-item:hover{background:rgba(0,0,0,.03)}
-.work-list-item.active{background:rgba(0,113,227,.08);box-shadow:inset 0 0 0 1px rgba(0,113,227,.15)}
+.work-list-item.active{background:rgba(0,113,227,.08);box-shadow:inset 0 0 0 1px rgba(0,113,227,.15)}.work-list-item.dragging{opacity:.35;transform:scale(.96)}.work-list-item.drag-over{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--radius-sm)}
 .work-list-item-thumb{
   width:48px;height:48px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#e8e6e2;
 }
@@ -167,27 +164,6 @@ body{
   .editor{padding:16px}
   .form-row{flex-direction:column}
 }
-
-/* Image Crop Modal */
-.crop-overlay{
-  position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
-  display:flex;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:all .3s;
-}
-.crop-overlay.open{visibility:visible;opacity:1}
-.crop-dialog{
-  background:var(--bg);border-radius:var(--radius);box-shadow:0 24px 64px rgba(0,0,0,.3);
-  padding:20px;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;gap:14px;
-}
-.crop-canvas-wrap{position:relative;overflow:hidden;background:#e8e6e2;border-radius:10px;display:flex;align-items:center;justify-content:center}
-.crop-canvas-wrap canvas{display:block;max-width:100%;max-height:60vh;cursor:move}
-.crop-ratios{display:flex;gap:8px;flex-wrap:wrap}
-.crop-ratio-btn{
-  padding:6px 14px;border-radius:100px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.5);
-  font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;
-}
-.crop-ratio-btn:hover,.crop-ratio-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.crop-actions{display:flex;gap:8px;justify-content:flex-end}
-.crop-actions .btn{font-size:13px;padding:8px 20px}
 </style>
 </head>
 <body>
@@ -222,31 +198,12 @@ body{
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Crop Modal -->
-<div class="crop-overlay" id="cropOverlay">
-  <div class="crop-dialog">
-    <div class="crop-canvas-wrap" id="cropWrap"><canvas id="cropCanvas"></canvas></div>
-    <div class="crop-ratios">
-      <button class="crop-ratio-btn active" data-ratio="free">自由</button>
-      <button class="crop-ratio-btn" data-ratio="1:1">1:1</button>
-      <button class="crop-ratio-btn" data-ratio="3:4">3:4</button>
-      <button class="crop-ratio-btn" data-ratio="4:3">4:3</button>
-      <button class="crop-ratio-btn" data-ratio="16:9">16:9</button>
-      <button class="crop-ratio-btn" data-ratio="9:16">9:16</button>
-    </div>
-    <div class="crop-actions">
-      <button class="btn btn-outline" onclick="skipCrop()">直接使用原图</button>
-      <button class="btn btn-outline" onclick="closeCrop()">取消</button>
-      <button class="btn btn-outline btn-sm" onclick="resetCrop()">重置</button>
-      <button class="btn btn-primary" onclick="applyCrop()">裁剪并应用 ✂</button>
-    </div>
-  </div>
-</div>
+<!-- Hidden file inputs -->
 <input type="file" id="thumbInput" accept="image/*" style="display:none">
 <input type="file" id="blockImgInput" accept="image/*" style="display:none">
 <input type="file" id="galleryInput" accept="image/*" multiple style="display:none">
 
-<script>document.write('<scr'+'ipt src="data.js?v='+Date.now()+'"></scr'+'ipt>')</script>
+<script src="data.js"></script>
 <script src="token.js"></script>
 <script>
 // ====== Data ======
@@ -273,23 +230,11 @@ function getDefaultWorks(){return[
 // Load
 var works;
 try{var d=localStorage.getItem('pf_works');works=d?JSON.parse(d):DEFAULT_WORKS}catch(e){works=DEFAULT_WORKS}
-var selectedId=null,editingBlockIdx=null;
+var selectedId=null,editingBlockIdx=null,workDragId=null;
 var toastTimer;
 
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2000)}
-function save(){
-  try{localStorage.setItem('pf_works',JSON.stringify(works))}catch(e){}
-  // Sync to API server if running
-  try{
-    var xhr=new XMLHttpRequest();
-    xhr.open('POST','/api/works/batch',true);
-    xhr.setRequestHeader('Content-Type','application/json');
-    xhr.onload=function(){if(xhr.status===200)toast('已保存并同步到服务器 ✓');else toast('已保存（本地）')};
-    xhr.onerror=function(){toast('已保存（本地）')};
-    xhr.send(JSON.stringify(works));
-  }catch(e){toast('已保存（本地）')}
-  refreshList();
-}
+function save(){try{localStorage.setItem('pf_works',JSON.stringify(works));toast('已保存 ✓')}catch(e){toast('保存失败')};refreshList()}
 function downloadDataJS(){var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';var b=new Blob([js],{type:'application/javascript'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='data.js';a.click();toast('已下载 data.js，双击 deploy.bat 即可上线 ✓')}
 
 // ====== Sidebar List ======
@@ -298,7 +243,7 @@ function refreshList(){
   document.getElementById('workCount').textContent=works.length;
   list.innerHTML=works.map(function(w){
     var active=selectedId===w.id?' active':'';
-    return'<div class="work-list-item'+active+'" data-id="'+w.id+'" onclick="selectWork('+w.id+')">'+
+    return'<div class="work-list-item'+active+'" draggable="true" data-id="'+w.id+'" onclick="selectWork('+w.id+')" ondragstart="workDragStart(event,'+w.id+')" ondragend="workDragEnd(event)" ondragover="workDragOver(event)" ondragleave="workDragLeave(event)" ondrop="workDrop(event,'+w.id+')">'+
       '<div class="work-list-item-thumb"><img src="'+esc(w.img)+'" onerror="this.style.display=\'none\'"></div>'+
       '<div class="work-list-item-info"><div class="work-list-item-title">'+esc(w.title)+'</div><div class="work-list-item-meta">'+esc(w.category)+' · '+esc(w.client||'')+'</div></div>'+
       '<div class="work-list-item-del" onclick="event.stopPropagation();deleteWork('+w.id+')" title="删除">✕</div>'+
@@ -320,6 +265,13 @@ function deleteWork(id){
   if(selectedId===id)selectedId=null;save();renderEditor();toast('已删除')
 }
 
+// ====== Work Drag Sort ======
+function workDragStart(e,id){workDragId=id;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move'}
+function workDragEnd(e){document.querySelectorAll('.work-list-item').forEach(function(el){el.classList.remove('dragging','drag-over')})}
+function workDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';var el=e.currentTarget;if(!el.classList.contains('dragging')){document.querySelectorAll('.work-list-item.drag-over').forEach(function(x){x.classList.remove('drag-over')});el.classList.add('drag-over')}}
+function workDragLeave(e){var el=e.currentTarget;if(e.relatedTarget&&el.contains(e.relatedTarget))return;el.classList.remove('drag-over')}
+function workDrop(e,targetId){e.preventDefault();var el=e.currentTarget;el.classList.remove('drag-over');if(workDragId===null||workDragId===targetId)return;var fromIdx=-1,toIdx=-1;for(var i=0;i<works.length;i++){if(works[i].id===workDragId)fromIdx=i;if(works[i].id===targetId)toIdx=i}if(fromIdx===-1||toIdx===-1)return;var moved=works.splice(fromIdx,1)[0];works.splice(toIdx,0,moved);save();refreshList()}
+
 // ====== Editor ======
 function renderEditor(){
   var editor=document.getElementById('editor');
@@ -337,14 +289,9 @@ function renderEditor(){
         '<div class="block-delete" onclick="deleteBlock('+i+')">✕</div></div>';
     } else {
       var txt=b.c||'';if(txt.length>30)txt=txt.substring(0,30)+'…';
-      var txtTitles=['项目背景','设计思路','设计细节','配色方案','排版设计','客户反馈','项目总结','创意概念'];
-      var titleOpts='<option value="">选择标题</option>';
-      for(var ti=0;ti<txtTitles.length;ti++){titleOpts+='<option value="'+txtTitles[ti]+'"'+(b.title===txtTitles[ti]?' selected':'')+'>'+txtTitles[ti]+'</option>'}
-      titleOpts+='<option value="__custom__">✎ 自定义</option>';
       detailBlocks+='<div class="block-item" draggable="true" data-idx="'+i+'">'+
         '<div class="block-handle">⋮⋮</div><span class="block-type text">文字</span>'+
-        '<select class="block-title-select" data-idx="'+i+'" onchange="changeBlockTitle('+i+',this.value)" style="width:110px;font-size:11px;padding:4px 6px;border:1px solid rgba(0,0,0,.1);border-radius:6px;flex-shrink:0">'+titleOpts+'</select>'+
-        '<div class="block-preview">'+esc(txt)+'</div>'+
+        '<div class="block-preview"><b>'+esc(b.title||'')+'</b> '+esc(txt)+'</div>'+
         '<div class="block-delete" onclick="deleteBlock('+i+')">✕</div></div>';
     }
   }
@@ -357,8 +304,8 @@ function renderEditor(){
         '<div class="form-group"><label>分类</label><select id="edCat"><option value="电商设计"'+(w.category==='电商设计'?' selected':'')+'>电商设计</option><option value="海报设计"'+(w.category==='海报设计'?' selected':'')+'>海报设计</option></select></div>'+
       '</div>'+
       '<div class="form-row">'+
-        '<div class="form-group"><label>客户</label><select id="edClient"><option value="">选择客户</option><option value="OMEGA旗舰店"'+(w.client==='OMEGA旗舰店'?' selected':'')+'>OMEGA旗舰店</option><option value="花西子旗舰店"'+(w.client==='花西子旗舰店'?' selected':'')+'>花西子旗舰店</option><option value="小米有品"'+(w.client==='小米有品'?' selected':'')+'>小米有品</option><option value="Nike旗舰店"'+(w.client==='Nike旗舰店'?' selected':'')+'>Nike旗舰店</option><option value="美的旗舰店"'+(w.client==='美的旗舰店'?' selected':'')+'>美的旗舰店</option><option value="瑞幸咖啡"'+(w.client==='瑞幸咖啡'?' selected':'')+'>瑞幸咖啡</option><option value="COLORKEY旗舰店"'+(w.client==='COLORKEY旗舰店'?' selected':'')+'>COLORKEY旗舰店</option><option value="野兽派旗舰店"'+(w.client==='野兽派旗舰店'?' selected':'')+'>野兽派旗舰店</option><option value="极光音乐节"'+(w.client==='极光音乐节'?' selected':'')+'>极光音乐节</option><option value="京东"'+(w.client==='京东'?' selected':'')+'>京东</option><option value="天猫"'+(w.client==='天猫'?' selected':'')+'>天猫</option><option value="城市美术馆"'+(w.client==='城市美术馆'?' selected':'')+'>城市美术馆</option><option value="蔚来汽车"'+(w.client==='蔚来汽车'?' selected':'')+'>蔚来汽车</option><option value="__custom__">✎ 其他（手动输入）</option></select><input value="'+esc(w.client||'')+'" id="edClientCustom" placeholder="输入自定义客户名" style="margin-top:6px;display:none" oninput="document.getElementById(\'edClient\').value=this.value"></div>'+
-        '<div class="form-group"><label>价格</label><select id="edPrice"><option value="¥299"'+(w.price==='¥299'?' selected':'')+'>¥299</option><option value="¥399"'+(w.price==='¥399'?' selected':'')+'>¥399</option><option value="¥499"'+(w.price==='¥499'?' selected':'')+'>¥499</option><option value="¥599"'+(w.price==='¥599'?' selected':'')+'>¥599</option><option value="¥799"'+(w.price==='¥799'?' selected':'')+'>¥799</option><option value="¥999"'+(w.price==='¥999'?' selected':'')+'>¥999</option><option value="__custom__">✎ 其他</option></select><input value="" id="edPriceCustom" placeholder="输入自定义价格" style="margin-top:6px;display:none" oninput="document.getElementById(\'edPrice\').value=this.value"></div>'+
+        '<div class="form-group"><label>客户</label><input value="'+esc(w.client||'')+'" id="edClient"></div>'+
+        '<div class="form-group"><label>价格</label><input value="'+esc(w.price||'')+'" id="edPrice" placeholder="如 ¥299"></div>'+
       '</div>'+
       '<div class="form-row">'+
         '<div class="form-group"><label>主图（缩略图）</label>'+
@@ -367,8 +314,7 @@ function renderEditor(){
           '</div>'+
         '</div>'+
         '<div class="form-group"><label>操作</label><br>'+
-          '<button class="btn btn-outline" onclick="openPreview()">预览详情页</button> '+
-          '<button class="btn btn-outline" onclick="cropCurrentThumb()">✂ 裁剪图片</button>'+
+          '<button class="btn btn-outline" onclick="openPreview()">预览详情页</button>'+
         '</div>'+
       '</div>'+
     '</div>'+
@@ -395,39 +341,21 @@ function renderEditor(){
       '<p style="font-size:11px;color:var(--text3);margin-top:8px">拖拽模块可排序 · 点击 ✕ 删除 · 点击图片可重新上传</p>'+
     '</div>'+
     '<div style="display:flex;gap:10px">'+
-      '<button class="btn btn-primary" onclick="saveEditor()">保存</button>'+
-      '<button class="btn" style="background:#e53935;color:#fff;border-color:#e53935" onclick="deployToGitHub()">🚀 一键上线</button>'+
+      '<button class="btn btn-primary" onclick="saveEditor()">保存修改</button>'+
+      '<button class="btn btn-primary" style="background:#e53935;border-color:#e53935" onclick="deployToGitHub()">🚀 一键发布上线</button>'+
       '<button class="btn btn-outline" onclick="openPreview()">预览</button>'+
     '</div>';
 
   attachBlockDrag();
   setupThumbDrop();
-  // Dropdown custom toggle
-  var clientSel=document.getElementById('edClient');
-  var clientCustom=document.getElementById('edClientCustom');
-  var priceSel=document.getElementById('edPrice');
-  var priceCustom=document.getElementById('edPriceCustom');
-  if(clientSel&&clientCustom){
-    // Init: show custom if value is custom
-    var clientOpts=['OMEGA旗舰店','花西子旗舰店','小米有品','Nike旗舰店','美的旗舰店','瑞幸咖啡','COLORKEY旗舰店','野兽派旗舰店','极光音乐节','京东','天猫','城市美术馆','蔚来汽车'];
-    if(w.client&&clientOpts.indexOf(w.client)<0){clientSel.value='__custom__';clientCustom.style.display='block';clientCustom.value=w.client}
-    clientSel.onchange=function(){if(this.value==='__custom__'){clientCustom.style.display='block';clientCustom.focus()}else{clientCustom.style.display='none';clientCustom.value=''}}
-  }
-  if(priceSel&&priceCustom){
-    var priceOpts=['¥299','¥399','¥499','¥599','¥799','¥999'];
-    if(w.price&&priceOpts.indexOf(w.price)<0){priceSel.value='__custom__';priceCustom.style.display='block';priceCustom.value=w.price}
-    priceSel.onchange=function(){if(this.value==='__custom__'){priceCustom.style.display='block';priceCustom.focus()}else{priceCustom.style.display='none';priceCustom.value=''}}
-  }
 }
 
 function saveEditor(){
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
   w.title=document.getElementById('edTitle').value||'未命名';
   w.category=document.getElementById('edCat').value;
-  var clientSel=document.getElementById('edClient');
-  w.client=clientSel.value==='__custom__'?(document.getElementById('edClientCustom').value||''):clientSel.value;
-  var priceSel=document.getElementById('edPrice');
-  w.price=priceSel.value==='__custom__'?(document.getElementById('edPriceCustom').value||''):priceSel.value;
+  w.client=document.getElementById('edClient').value;
+  w.price=document.getElementById('edPrice').value;
   if(w.specs){w.specs['客户']=w.client;w.specs['价格']=w.price}
   // Sync cover from gallery
   if(w.gallery&&w.gallery.length>0)w.img=w.gallery[0];
@@ -437,13 +365,20 @@ function saveEditor(){
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
 // ====== Thumbnail Upload ======
+document.getElementById('thumbInput').addEventListener('change',function(){
+  if(!this.files||!this.files[0])return;
+  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
+  resizeImage(this.files[0],function(b64){w.img=b64;renderEditor();save()});
+  this.value='';
+});
+
 function setupThumbDrop(){
   var el=document.getElementById('thumbUpload');if(!el)return;
   el.addEventListener('dragover',function(e){e.preventDefault();el.style.borderColor='var(--accent)'});
   el.addEventListener('dragleave',function(){el.style.borderColor=''});
   el.addEventListener('drop',function(e){e.preventDefault();el.style.borderColor='';
     var w=works.find(function(x){return x.id===selectedId});if(!w||!e.dataTransfer.files[0])return;
-    uploadWithCropOption(e.dataTransfer.files[0],function(b64){w.img=b64;renderEditor();save()});
+    resizeImage(e.dataTransfer.files[0],function(b64){w.img=b64;renderEditor();save()});
   });
 }
 
@@ -466,10 +401,22 @@ function addBlock(type){
     editingBlockIdx=w.detail.length;
     document.getElementById('blockImgInput').click();
   } else {
-    w.detail.push({t:'text',title:'项目背景',c:''});
+    w.detail.push({t:'text',title:'新段落',c:''});
     renderEditor();save();
   }
 }
+
+document.getElementById('blockImgInput').addEventListener('change',function(){
+  if(!this.files||!this.files[0])return;
+  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
+  var idx=editingBlockIdx;
+  resizeImage(this.files[0],function(b64){
+    if(idx<w.detail.length&&w.detail[idx].t==='image'){w.detail[idx].src=b64}
+    else {w.detail.splice(idx,0,{t:'image',src:b64})}
+    renderEditor();save();toast('图片模块已添加 ✓')
+  });
+  this.value='';
+});
 
 function editBlockImg(idx){editingBlockIdx=idx;document.getElementById('blockImgInput').click()}
 
@@ -500,12 +447,6 @@ function removeGalleryImg(i){
 function deleteBlock(idx){
   var w=works.find(function(x){return x.id===selectedId});if(!w)return;
   w.detail.splice(idx,1);renderEditor();save();
-}
-function changeBlockTitle(idx,val){
-  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  if(!w.detail[idx])return;
-  w.detail[idx].title=val==='__custom__'?'':val;
-  save();
 }
 
 function attachBlockDrag(){
@@ -559,6 +500,7 @@ function copyData(){
     // Fallback for older browsers
     var ta=document.createElement('textarea');ta.value=data;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
     toast('已复制！粘贴发给助手即可上线 ✓');
+
   });
 }
 
@@ -571,29 +513,36 @@ function importData(){
   var inp=document.createElement('input');inp.type='file';inp.accept='.json';
   inp.onchange=function(){if(!this.files[0])return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);if(!Array.isArray(d))throw new Error('');works=d;selectedId=null;save();renderEditor();toast('已导入 '+d.length+' 件作品')}catch(err){toast('格式错误')}};r.readAsText(this.files[0])};inp.click();
 }
+// ====== Auto Deploy to GitHub ======
+var GITHUB_REPO='ddha6/portfolio';
+
 function deployToGitHub(){
   save();
-  if(typeof GITHUB_TOKEN==='undefined'){toast('token.js 缺失');return}
   var js='var DEFAULT_WORKS='+JSON.stringify(works)+';';
-  var encoder=new TextEncoder();var bytes=encoder.encode(js);
-  var bin='';for(var i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
-  var content=btoa(bin);
+  var content=btoa(unescape(encodeURIComponent(js)));
+  // Get current file SHA
   var xhr=new XMLHttpRequest();
-  xhr.open('GET','https://api.github.com/repos/ddha6/portfolio/contents/data.js',true);
+  xhr.open('GET','https://api.github.com/repos/'+GITHUB_REPO+'/contents/data.js',true);
   xhr.setRequestHeader('Authorization','token '+GITHUB_TOKEN);
   xhr.setRequestHeader('Accept','application/vnd.github.v3+json');
   xhr.onload=function(){
     if(xhr.status===200||xhr.status===404){
-      var sha=null;if(xhr.status===200)sha=JSON.parse(xhr.responseText).sha;
-      var body=JSON.stringify({message:'update data',content:content,branch:'main'});
-      if(sha)body=JSON.stringify({message:'update data',content:content,sha:sha,branch:'main'});
+      var sha=null;
+      if(xhr.status===200){var r=JSON.parse(xhr.responseText);sha=r.sha}
+      // Create/update file
+      var body=JSON.stringify({message:'update: data refresh',content:content,branch:'main'});
+      if(sha)body=JSON.stringify({message:'update: data refresh',content:content,sha:sha,branch:'main'});
       var put=new XMLHttpRequest();
-      put.open('PUT','https://api.github.com/repos/ddha6/portfolio/contents/data.js',true);
+      put.open('PUT','https://api.github.com/repos/'+GITHUB_REPO+'/contents/data.js',true);
       put.setRequestHeader('Authorization','token '+GITHUB_TOKEN);
+      put.setRequestHeader('Accept','application/vnd.github.v3+json');
       put.setRequestHeader('Content-Type','application/json');
-      put.onload=function(){if(put.status===200||put.status===201)toast('✓ 已上线');else toast('失败: '+put.status)};
+      put.onload=function(){
+        if(put.status===200||put.status===201){toast('✓ 已发布上线！1分钟后刷新网站查看')}
+        else{try{var e=JSON.parse(put.responseText);toast('发布失败: '+e.message)}catch(err){toast('发布失败，请检查网络')}}
+      };
       put.send(body);
-    }else toast('网络错误')
+    }else{toast('网络错误，请重试')}
   };
   xhr.send();
 }
@@ -601,306 +550,6 @@ function deployToGitHub(){
 function resetAll(){
   if(!confirm('确定恢复默认数据？所有修改将丢失。'))return;
   works=DEFAULT_WORKS.slice();selectedId=null;try{localStorage.removeItem('pf_works')}catch(e){}save();renderEditor();toast('已恢复默认')
-}
-
-// ====== Image Crop ======
-var cropCtx=null,cropImg=null,cropRatio='free',cropDrag=null,cropOX=0,cropOY=0;
-var cropOffX=0,cropOffY=0,cropScale=1,cropCallback=null,cropOrigFile=null;
-var cropRect={x:0,y:0,w:1,h:1}; // in image pixel coords
-var cropWrap=document.getElementById('cropWrap'),cropCanvas=document.getElementById('cropCanvas'),cropOverlay=document.getElementById('cropOverlay');
-cropCtx=cropCanvas.getContext('2d');
-
-// Ratio buttons
-document.querySelectorAll('.crop-ratio-btn').forEach(function(btn){
-  btn.addEventListener('click',function(){
-    document.querySelectorAll('.crop-ratio-btn').forEach(function(b){b.classList.remove('active')});
-    this.classList.add('active');
-    var oldRatio=cropRatio;
-    cropRatio=this.dataset.ratio;
-    if(cropRatio!=='free'&&oldRatio==='free'&&cropImg){
-      // Initialize crop rect to fill with ratio
-      initCropRect();
-    }
-    if(cropRatio!=='free')fixCropRatio();
-    drawCrop();
-  });
-});
-
-function initCropRect(){
-  if(!cropImg)return;
-  var iw=cropImg.naturalWidth,ih=cropImg.naturalHeight;
-  cropRect={x:0,y:0,w:iw,h:ih};
-  if(cropRatio!=='free')fixCropRatio();
-}
-
-function fixCropRatio(){
-  var iw=cropImg.naturalWidth,ih=cropImg.naturalHeight;
-  var p=cropRatio.split(':'),tw=parseInt(p[0]),th=parseInt(p[1]);
-  var maxW=Math.min(cropRect.w,iw-cropRect.x),maxH=Math.min(cropRect.h,ih-cropRect.y);
-  if(maxW/maxH>tw/th){cropRect.w=maxH*(tw/th)}else{cropRect.h=maxW/(tw/th)}
-  cropRect.x=Math.max(0,Math.min(iw-cropRect.w,cropRect.x));
-  cropRect.y=Math.max(0,Math.min(ih-cropRect.h,cropRect.y));
-}
-
-function resizeDirect(file,cb){
-  var reader=new FileReader();reader.onload=function(e){
-    var img=new Image();img.onload=function(){
-      var w=img.naturalWidth,h=img.naturalHeight,max=1200;
-      if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max}else{w=Math.round(w*max/h);h=max}}
-      var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
-      cb(c.toDataURL('image/jpeg',.85));
-    };img.src=e.target.result;
-  };reader.readAsDataURL(file);
-}
-
-function uploadWithCropOption(file,cb){
-  var reader=new FileReader();reader.onload=function(e){
-    openCrop(e.target.result,cb,file);
-  };reader.readAsDataURL(file);
-}
-
-function openCrop(dataUrl,cb,file){
-  cropCallback=cb;cropOrigFile=file||null;cropScale=1;cropOffX=0;cropOffY=0;cropRatio='free';
-  document.querySelectorAll('.crop-ratio-btn').forEach(function(b){b.classList.remove('active')});
-  document.querySelector('.crop-ratio-btn[data-ratio="free"]').classList.add('active');
-  document.body.style.overflow='hidden';
-  cropImg=new Image();cropImg.onload=function(){
-    cropCanvas.width=cropImg.naturalWidth;cropCanvas.height=cropImg.naturalHeight;
-    cropRect={x:0,y:0,w:cropImg.naturalWidth,h:cropImg.naturalHeight};
-    cropOverlay.classList.add('open');drawCrop();
-  };cropImg.src=dataUrl;
-}
-
-function cropCurrentThumb(){
-  var w=works.find(function(x){return x.id===selectedId});if(!w||!w.img)return;
-  var img=new Image();img.crossOrigin='anonymous';
-  img.onload=function(){
-    var c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
-    c.getContext('2d').drawImage(img,0,0);
-    openCrop(c.toDataURL('image/jpeg',.9),function(b64){w.img=b64;renderEditor();save()});
-  };
-  img.onerror=function(){toast('无法加载该图片（可能是跨域问题），请重新上传')};
-  img.src=w.img;
-}
-
-function closeCrop(){cropOverlay.classList.remove('open');document.body.style.overflow='';cropImg=null;cropCallback=null;cropOrigFile=null}
-function resetCrop(){
-  if(!cropImg)return;
-  cropScale=1;cropOffX=0;cropOffY=0;
-  cropRect={x:0,y:0,w:cropImg.naturalWidth,h:cropImg.naturalHeight};
-  cropRatio='free';
-  document.querySelectorAll('.crop-ratio-btn').forEach(function(b){b.classList.remove('active')});
-  document.querySelector('.crop-ratio-btn[data-ratio="free"]').classList.add('active');
-  drawCrop();
-}
-function skipCrop(){
-  if(cropOrigFile&&cropCallback){resizeDirect(cropOrigFile,cropCallback)}
-  closeCrop();
-}
-
-function getCanvasPos(e){
-  var r=cropCanvas.getBoundingClientRect();
-  return{x:(e.clientX-r.left)/cropScale,y:(e.clientY-r.top)/cropScale}
-}
-
-function drawCrop(){
-  if(!cropImg)return;
-  var iw=cropImg.naturalWidth,ih=cropImg.naturalHeight;
-  // Canvas always shows full image — no stretching
-  var maxW=cropWrap.clientWidth-20,maxH=window.innerHeight*.5;
-  var fitScale=Math.min(maxW/iw,maxH/ih);
-  cropScale=Math.min(cropScale,fitScale,.98);
-  var dw=iw*cropScale,dh=ih*cropScale;
-  cropCanvas.style.width=dw+'px';cropCanvas.style.height=dh+'px';
-  cropCtx.clearRect(0,0,cropCanvas.width,cropCanvas.height);
-  // 1. Draw full image dimmed
-  cropCtx.globalAlpha=.25;
-  cropCtx.drawImage(cropImg,0,0,iw,ih,0,0,cropCanvas.width,cropCanvas.height);
-  cropCtx.globalAlpha=1;
-  // 2. Draw crop rect at full brightness (same scale, just clipped region)
-  var cr=cropRect;
-  var scaleX=cropCanvas.width/iw,scaleY=cropCanvas.height/ih;
-  var bx=cr.x*scaleX,by=cr.y*scaleY,bw=cr.w*scaleX,bh=cr.h*scaleY;
-  // Clip to crop rect and redraw the image portion at full brightness
-  cropCtx.save();
-  cropCtx.beginPath();
-  cropCtx.rect(bx,by,bw,bh);
-  cropCtx.clip();
-  cropCtx.drawImage(cropImg,0,0,iw,ih,0,0,cropCanvas.width,cropCanvas.height);
-  cropCtx.restore();
-  // 3. White border
-  cropCtx.strokeStyle='#fff';cropCtx.lineWidth=2;
-  cropCtx.strokeRect(bx,by,bw,bh);
-  // 4. Resize handles — large for easy clicking
-  var hs=12;
-  var handles=[[bx,by],[bx+bw/2,by],[bx+bw,by],[bx,by+bh/2],[bx+bw,by+bh/2],[bx,by+bh],[bx+bw/2,by+bh],[bx+bw,by+bh]];
-  for(var i=0;i<handles.length;i++){
-    cropCtx.fillStyle='#fff';cropCtx.fillRect(handles[i][0]-hs/2,handles[i][1]-hs/2,hs,hs);
-    cropCtx.strokeStyle='#333';cropCtx.lineWidth=1.5;
-    cropCtx.strokeRect(handles[i][0]-hs/2,handles[i][1]-hs/2,hs,hs);
-  }
-  // Dark overlay outside crop area
-  cropCtx.fillStyle='rgba(0,0,0,.4)';
-  cropCtx.fillRect(0,0,cropCanvas.width,by); // top
-  cropCtx.fillRect(0,by+bh,cropCanvas.width,cropCanvas.height-by-bh); // bottom
-  cropCtx.fillRect(0,by,bx,bh); // left
-  cropCtx.fillRect(bx+bw,by,cropCanvas.width-bx-bw,bh); // right
-}
-
-// Mouse/touch handling
-function getDragMode(e){
-  if(!cropImg)return null;
-  var p=getCanvasPos(e);
-  var iw=cropImg.naturalWidth,ih=cropImg.naturalHeight;
-  var cr=cropRect;
-  var bx=cr.x/iw*cropCanvas.width,by=cr.y/ih*cropCanvas.height;
-  var bw=cr.w/iw*cropCanvas.width,bh=cr.h/ih*cropCanvas.height;
-  var hr=16; // detection radius
-  var handles=[
-    {x:bx,y:by,m:'nw'},{x:bx+bw/2,y:by,m:'n'},{x:bx+bw,y:by,m:'ne'},
-    {x:bx,y:by+bh/2,m:'w'},{x:bx+bw,y:by+bh/2,m:'e'},
-    {x:bx,y:by+bh,m:'sw'},{x:bx+bw/2,y:by+bh,m:'s'},{x:bx+bw,y:by+bh,m:'se'}
-  ];
-  for(var i=0;i<handles.length;i++){
-    if(Math.abs(p.x-handles[i].x)<hr&&Math.abs(p.y-handles[i].y)<hr)return handles[i].m;
-  }
-  if(p.x>=bx&&p.x<=bx+bw&&p.y>=by&&p.y<=by+bh)return'move';
-  return'pan';
-}
-
-cropCanvas.addEventListener('mousedown',function(e){
-  cropDrag=getDragMode(e);
-  if(cropDrag){cropOX=e.clientX;cropOY=e.clientY;e.preventDefault()}
-});
-// Update cursor based on hover position
-cropCanvas.addEventListener('mousemove',function(e){
-  if(cropDrag||!cropImg)return;
-  var m=getDragMode(e);
-  if(!m)return;
-  if(m==='pan')cropCanvas.style.cursor='grab';
-  else if(m==='move')cropCanvas.style.cursor='move';
-  else if(m.indexOf('w')>=0||m.indexOf('e')>=0)cropCanvas.style.cursor='ew-resize';
-  else cropCanvas.style.cursor='ns-resize';
-});
-window.addEventListener('mousemove',function(e){
-  if(!cropDrag||!cropImg)return;
-  var dx=(e.clientX-cropOX)/cropScale,dy=(e.clientY-cropOY)/cropScale;
-  cropOX=e.clientX;cropOY=e.clientY;
-  var iw=cropImg.naturalWidth,ih=cropImg.naturalHeight;
-  if(cropDrag==='pan'){cropOffX+=dx;cropOffY+=dy}
-  else if(cropDrag==='move'){
-    cropRect.x=Math.max(0,Math.min(iw-cropRect.w,cropRect.x+dx));
-    cropRect.y=Math.max(0,Math.min(ih-cropRect.h,cropRect.y+dy));
-  } else {
-    // Resize
-    var m=cropDrag;
-    if(m.indexOf('w')>=0){cropRect.x=Math.max(0,cropRect.x+dx);cropRect.w-=dx}
-    if(m.indexOf('e')>=0){cropRect.w=Math.min(iw-cropRect.x,cropRect.w+dx)}
-    if(m.indexOf('n')>=0){cropRect.y=Math.max(0,cropRect.y+dy);cropRect.h-=dy}
-    if(m.indexOf('s')>=0){cropRect.h=Math.min(ih-cropRect.y,cropRect.h+dy)}
-    if(cropRect.w<20){cropRect.w=20}
-    if(cropRect.h<20){cropRect.h=20}
-    if(cropRatio!=='free')fixCropRatio();
-  }
-  drawCrop();
-  // Update cursor
-  if(cropDrag==='pan')cropCanvas.style.cursor='grabbing';
-  else if(cropDrag==='move')cropCanvas.style.cursor='move';
-  else cropCanvas.style.cursor=cropDrag.indexOf('w')>=0||cropDrag.indexOf('e')>=0?'ew-resize':'ns-resize';
-});
-window.addEventListener('mouseup',function(){cropDrag=null;if(cropCanvas)cropCanvas.style.cursor='default'});
-// Touch
-cropCanvas.addEventListener('touchstart',function(e){
-  e.preventDefault();
-  cropDrag=getDragMode(e.touches[0]);
-  if(cropDrag){cropOX=e.touches[0].clientX;cropOY=e.touches[0].clientY}
-});
-window.addEventListener('touchmove',function(e){
-  if(!cropDrag||!cropImg)return;
-  var dx=(e.touches[0].clientX-cropOX)/cropScale,dy=(e.touches[0].clientY-cropOY)/cropScale;
-  cropOX=e.touches[0].clientX;cropOY=e.touches[0].clientY;
-  var iw=cropImg.naturalWidth,ih=cropImg.naturalHeight;
-  if(cropDrag==='pan'){cropOffX+=dx;cropOffY+=dy}
-  else if(cropDrag==='move'){
-    cropRect.x=Math.max(0,Math.min(iw-cropRect.w,cropRect.x+dx));
-    cropRect.y=Math.max(0,Math.min(ih-cropRect.h,cropRect.y+dy));
-  }
-  drawCrop();
-},{passive:false});
-window.addEventListener('touchend',function(){cropDrag=null});
-
-// Wheel zoom
-cropWrap.addEventListener('wheel',function(e){
-  if(!cropImg)return;e.preventDefault();
-  cropScale*=(e.deltaY>0?.9:1.1);cropScale=Math.max(.1,Math.min(5,cropScale));
-  drawCrop();
-},{passive:false});
-
-cropOverlay.addEventListener('click',function(e){if(e.target===cropOverlay)closeCrop()});
-
-function applyCrop(){
-  if(!cropImg)return;
-  var cr=cropRect;
-  var maxDim=1200,targetW=cr.w,targetH=cr.h;
-  if(targetW>maxDim||targetH>maxDim){var r=Math.min(maxDim/targetW,maxDim/targetH);targetW=Math.round(targetW*r);targetH=Math.round(targetH*r)}
-  var oc=document.createElement('canvas');oc.width=targetW;oc.height=targetH;
-  oc.getContext('2d').drawImage(cropImg,cr.x,cr.y,cr.w,cr.h,0,0,targetW,targetH);
-  var b64=oc.toDataURL('image/jpeg',.85);
-  closeCrop();if(cropCallback)cropCallback(b64);
-}
-
-// Hook into upload flows with optional crop
-document.getElementById('thumbInput').addEventListener('change',function(){
-  if(!this.files||!this.files[0])return;
-  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  uploadWithCropOption(this.files[0],function(b64){w.img=b64;renderEditor();save()});this.value='';
-});
-document.getElementById('blockImgInput').addEventListener('change',function(){
-  if(!this.files||!this.files[0])return;
-  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  var idx=editingBlockIdx;
-  uploadWithCropOption(this.files[0],function(b64){if(idx<w.detail.length&&w.detail[idx].t==='image'){w.detail[idx].src=b64}else{w.detail.splice(idx,0,{t:'image',src:b64})}renderEditor();save();toast('图片模块已添加 ✓')});this.value='';
-});
-// Gallery uses direct resize (no crop for multi-file)
-var origResizeImage=resizeImage;
-
-// Clipboard paste for thumbnail
-document.addEventListener('paste',function(e){
-  if(!selectedId)return;
-  var items=e.clipboardData&&e.clipboardData.items;
-  if(!items)return;
-  for(var i=0;i<items.length;i++){
-    if(items[i].type.indexOf('image')!==-1){
-      e.preventDefault();
-      var file=items[i].getAsFile();
-      uploadWithCropOption(file,function(b64){
-        var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-        w.img=b64;renderEditor();save();toast('图片已粘贴 ✓')
-      });
-      return;
-    }
-  }
-});
-
-// Auto-save when switching works
-var origSelectWork=selectWork;
-selectWork=function(id){
-  if(selectedId&&selectedId!==id)saveEditorSilent();
-  origSelectWork(id);
-};
-function saveEditorSilent(){
-  var w=works.find(function(x){return x.id===selectedId});if(!w)return;
-  var titleEl=document.getElementById('edTitle'),catEl=document.getElementById('edCat');
-  if(!titleEl)return;
-  w.title=titleEl.value||'未命名';
-  w.category=catEl.value;
-  var clientSel=document.getElementById('edClient');
-  w.client=clientSel.value==='__custom__'?(document.getElementById('edClientCustom').value||''):clientSel.value;
-  var priceSel=document.getElementById('edPrice');
-  w.price=priceSel.value==='__custom__'?(document.getElementById('edPriceCustom').value||''):priceSel.value;
-  if(w.specs){w.specs['客户']=w.client;w.specs['价格']=w.price}
-  if(w.gallery&&w.gallery.length>0)w.img=w.gallery[0];
-  try{localStorage.setItem('pf_works',JSON.stringify(works))}catch(e){}
 }
 
 // ====== Init ======
