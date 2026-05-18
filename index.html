@@ -893,6 +893,8 @@ navLinks.forEach(function(a){a.addEventListener("click",function(){navLinks.forE
 function openResume(){document.getElementById("resumeModal").classList.add("open");document.body.style.overflow="hidden"}
 function closeResume(){document.getElementById("resumeModal").classList.remove("open");document.body.style.overflow=""}
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closeResume()});
+// Space key: smooth scroll down
+document.addEventListener("keydown",function(e){if(e.key===" "&&!e.target.closest("input,textarea,[contenteditable]")&&!document.getElementById("resumeModal").classList.contains("open")&&!document.getElementById("detailOverlay").classList.contains("open")){e.preventDefault();window.scrollBy({top:window.innerHeight*.8,behavior:"smooth"})}});
 </script>
 <!-- Resume Modal -->
 <div class="resume-modal" id="resumeModal" onclick="if(event.target===this)closeResume()">
