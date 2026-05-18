@@ -234,7 +234,7 @@ function openDB(cb){var r=indexedDB.open('pf_admin',1);r.onupgradeneeded=functio
 function saveDB(k,v,cb){if(!dbReady){dbQueue.push(function(){saveDB(k,v,cb)});return}try{var t=db.transaction('data','readwrite');t.objectStore('data').put(v,k);t.oncomplete=function(){if(cb)cb(1)};t.onerror=function(){if(cb)cb(0)}}catch(e){if(cb)cb(0)}}
 function loadDB(k,cb){if(!dbReady){dbQueue.push(function(){loadDB(k,cb)});return}try{var t=db.transaction('data','readonly');var r=t.objectStore('data').get(k);r.onsuccess=function(){cb(r.result)};r.onerror=function(){cb(null)}}catch(e){cb(null)}}
 // Init: use IndexedDB as source of truth, DEFAULT_WORKS as fallback (no merge)
-var works=DEFAULT_WORKS.slice();openDB(function(){loadDB('works',function(s){if(s&&Array.isArray(s)){var si={};s.forEach(function(w){si[w.id]=1});DEFAULT_WORKS.forEach(function(w){if(!si[w.id])s.push(w)});works=s}refreshList();renderEditor()})})
+var works=DEFAULT_WORKS.slice();openDB(function(){loadDB('works',function(s){if(s&&Array.isArray(s)){works=s}refreshList();renderEditor()})})
 var selectedId=null,editingBlockIdx=null,workDragId=null;
 var toastTimer;
 
