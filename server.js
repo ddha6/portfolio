@@ -1,14 +1,6 @@
 /**
  * Portfolio Backend — Production-Grade Express Server
- *
- * Architecture:
- *   1. Security middleware (headers, CORS)
- *   2. Observability  (structured logging, health)
- *   3. Rate limiting  (in-memory sliding window)
- *   4. Static serving  (with cache policies)
- *   5. API routes      (thin controllers → data store)
- *   6. Error handler   (centralized, typed errors)
- *   7. Graceful shutdown (SIGTERM/SIGINT)
+ * v2.1 — Data integrity, memory safety, race-condition fixes
  */
 
 const express = require('express');
@@ -16,11 +8,10 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const multer = require('multer');
-const { execSync } = require('child_process');
 const config = require('./config');
 
 // ═══════════════════════════════════════════
-//  Data Store — atomic, backed-up, validated
+//  Data Store — atomic writes, validated, backed-up
 // ═══════════════════════════════════════════
 
 class DataStore {
@@ -29,13 +20,13 @@ class DataStore {
     this.lock = false;
     this.queue = [];
     this.writeCount = 0;
+    this.backupCount = 0;
     this._ensureExists();
   }
 
   _ensureExists() {
     const dir = path.dirname(this.filePath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    // Check existing data is a valid array
     if (fs.existsSync(this.filePath)) {
       const existing = this.read();
       if (Array.isArray(existing) && existing.length > 0) return;
@@ -66,30 +57,41 @@ class DataStore {
   }
 
   _writeSync(data) {
+    if (!Array.isArray(data)) throw new Error('DataStore: data must be an array');
     const tmp = this.filePath + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
     fs.renameSync(tmp, this.filePath);
   }
 
   read() {
-    try {
-      const raw = fs.readFileSync(this.filePath, 'utf-8');
-      const data = JSON.parse(raw);
-      if (!Array.isArray(data)) {
-        console.error('Data file is not an array, resetting...');
-        this._loadDefaults();
-        return this.read();
+    let retries = 0;
+    const maxRetries = 2;
+    const _read = () => {
+      try {
+        const raw = fs.readFileSync(this.filePath, 'utf-8');
+        const data = JSON.parse(raw);
+        if (!Array.isArray(data)) throw new Error('Not an array');
+        return data;
+      } catch (e) {
+        if (retries++ < maxRetries) {
+          console.error('Corrupted data file, resetting...');
+          this._loadDefaults();
+          return _read();
+        }
+        console.error('FATAL: Cannot recover data file, returning empty array');
+        return [];
       }
-      return data;
-    } catch {
-      console.error('Corrupted data file, resetting...');
-      this._loadDefaults();
-      return this.read();
-    }
+    };
+    return _read();
   }
 
   async write(data) {
+    if (!Array.isArray(data)) throw new Error('DataStore: data must be an array');
     return new Promise((resolve, reject) => {
+      // Cap queue to prevent memory leak under extreme load
+      if (this.queue.length > 50) {
+        this.queue = this.queue.slice(-50);
+      }
       this.queue.push({ data, resolve, reject });
       if (!this.lock) this._processQueue();
     });
@@ -102,8 +104,10 @@ class DataStore {
     try {
       this._writeSync(data);
       this.writeCount++;
-      // Probabilistic backup
-      if (Math.random() < config.backup.backupFrequency) {
+      // Deterministic backup: every Nth write
+      this.backupCount++;
+      if (this.backupCount >= Math.ceil(1 / config.backup.backupFrequency)) {
+        this.backupCount = 0;
         this._createBackup(data);
       }
       resolve();
@@ -112,6 +116,24 @@ class DataStore {
       reject(e);
     }
     setImmediate(() => this._processQueue());
+  }
+
+  /** Atomically mutate data: read → transform → write, with retry on conflict */
+  async atomic(mutate) {
+    const MAX_RETRIES = 3;
+    for (let i = 0; i < MAX_RETRIES; i++) {
+      const data = this.read();
+      const transformed = mutate(data);
+      if (transformed === data) return transformed; // no change
+      if (!Array.isArray(transformed)) throw new Error('atomic: transformer must return an array');
+      // Write and verify
+      await this.write(transformed);
+      // Read back to verify
+      const verify = this.read();
+      if (verify.length === transformed.length) return transformed;
+      // Conflict detected, retry
+    }
+    throw new Error('atomic: max retries exceeded, write conflict');
   }
 
   _createBackup(data) {
@@ -156,17 +178,43 @@ function validateWork(body) {
   return e;
 }
 
-function sanitizeWork(body) {
-  return {
-    title: String(body.title || '新作品').slice(0, 200),
-    category: VALID_CATEGORIES.includes(body.category) ? body.category : '电商设计',
-    client: String(body.client || '').slice(0, 100),
-    price: String(body.price || '').slice(0, 20),
-    img: String(body.img || '').slice(0, 500),
-    detail: Array.isArray(body.detail) ? body.detail.slice(0, 50) : [],
-    gallery: Array.isArray(body.gallery) ? body.gallery.slice(0, 20) : [],
-    specs: (body.specs && typeof body.specs === 'object') ? body.specs : {},
+function sanitizeWork(body, isPartial = false) {
+  const defaults = isPartial ? {} : {
+    title: '新作品',
+    category: '电商设计',
+    client: '',
+    price: '',
+    img: '',
+    detail: [],
+    gallery: [],
+    specs: {},
   };
+
+  const out = {};
+  const fields = ['title', 'category', 'client', 'price', 'img'];
+
+  for (const f of fields) {
+    if (body[f] !== undefined || !isPartial) {
+      const val = body[f] !== undefined ? body[f] : defaults[f];
+      out[f] = String(val || defaults[f] || '').slice(0, f === 'title' ? 200 : f === 'client' ? 100 : f === 'price' ? 20 : 500);
+    }
+  }
+
+  if (body.category !== undefined || !isPartial) {
+    out.category = VALID_CATEGORIES.includes(body.category) ? body.category : '电商设计';
+  }
+
+  if (body.detail !== undefined || !isPartial) {
+    out.detail = Array.isArray(body.detail) ? body.detail.slice(0, 50) : [];
+  }
+  if (body.gallery !== undefined || !isPartial) {
+    out.gallery = Array.isArray(body.gallery) ? body.gallery.slice(0, 20) : [];
+  }
+  if (body.specs !== undefined || !isPartial) {
+    out.specs = (body.specs && typeof body.specs === 'object') ? body.specs : {};
+  }
+
+  return out;
 }
 
 // ═══════════════════════════════════════════
@@ -198,18 +246,16 @@ const upload = multer({
 const app = express();
 const store = new DataStore(config.dataFile);
 
-// --- Security Headers (Helmet-lite, no extra deps) ---
+// --- Security Headers ---
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '0'); // deprecated but still blocks in older browsers
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-  res.setHeader('X-DNS-Prefetch-Control', 'off');
   next();
 });
 
-// --- CORS (allow admin.html cross-origin access if needed) ---
+// --- CORS ---
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -222,6 +268,13 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// --- Request ID ---
+app.use((req, res, next) => {
+  req.id = crypto.randomBytes(4).toString('hex');
+  res.setHeader('X-Request-Id', req.id);
+  next();
+});
+
 // --- Request Logging ---
 if (config.logging.logApiRequests) {
   app.use((req, res, next) => {
@@ -230,14 +283,26 @@ if (config.logging.logApiRequests) {
     res.on('finish', () => {
       const ms = Date.now() - start;
       const level = res.statusCode >= 500 ? 'ERROR' : res.statusCode >= 400 ? 'WARN' : 'INFO';
-      console.log(`[${level}] ${req.method} ${req.url} → ${res.statusCode} (${ms}ms)`);
+      console.log(`[${level}] ${req.method} ${req.url} → ${res.statusCode} (${ms}ms) [${req.id}]`);
     });
     next();
   });
 }
 
-// --- Rate Limiter (sliding window, per-IP) ---
+// --- Rate Limiter (sliding window, per-IP, with cleanup) ---
 const rateWindows = new Map();
+const RATE_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const RATE_TTL = config.rateLimit.windowMs * 2;
+
+setInterval(() => {
+  const cutoff = Date.now() - RATE_TTL;
+  for (const [ip, history] of rateWindows) {
+    if (history.length === 0 || history[history.length - 1] < cutoff) {
+      rateWindows.delete(ip);
+    }
+  }
+}, RATE_CLEANUP_INTERVAL).unref();
+
 app.use('/api', (req, res, next) => {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
@@ -245,18 +310,20 @@ app.use('/api', (req, res, next) => {
   const max = config.rateLimit.maxRequestsPerWindow;
 
   if (!rateWindows.has(ip)) rateWindows.set(ip, []);
-  const history = rateWindows.get(ip).filter(t => t > now - win);
+  let history = rateWindows.get(ip);
+  // Trim expired entries (keep only entries within window)
+  history = history.filter(t => t > now - win);
   history.push(now);
   rateWindows.set(ip, history);
 
   res.setHeader('X-RateLimit-Limit', max);
   res.setHeader('X-RateLimit-Remaining', Math.max(0, max - history.length));
-  res.setHeader('X-RateLimit-Reset', Math.ceil((history[0] + win) / 1000));
+  res.setHeader('X-RateLimit-Reset', Math.ceil((now + win) / 1000));
 
   if (history.length > max) {
     return res.status(429).json({
       success: false,
-      message: 'Too many requests. Retry after ' + Math.ceil(win / 1000) + 's.',
+      message: `Too many requests. Retry after ${Math.ceil(win / 1000)}s.`,
     });
   }
   next();
@@ -278,18 +345,16 @@ app.use(express.static(config.rootDir, {
 }));
 
 // ═══════════════════════════════════════════
-//  API Routes
+//  API Routes — thin controllers
 // ═══════════════════════════════════════════
 
-// Health check (also used by monitors/load balancers)
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     time: new Date().toISOString(),
     uptime: process.uptime(),
-    memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
     works: store.read().length,
-    store: store.stats(),
   });
 });
 
@@ -307,42 +372,46 @@ app.get('/api/works/:id', (req, res) => {
   res.json({ success: true, data: work });
 });
 
-// POST create work
+// POST create work — atomic to prevent duplicate IDs
 app.post('/api/works', async (req, res, next) => {
   try {
     const errors = validateWork(req.body);
     if (errors.length) return res.status(400).json({ success: false, message: errors.join('; ') });
-    const works = store.read();
-    const maxId = works.reduce((max, w) => Math.max(max, w.id), 0);
-    const work = {
-      id: maxId + 1,
-      ...sanitizeWork(req.body),
-      createdAt: new Date().toISOString(),
-    };
-    works.unshift(work);
-    await store.write(works);
-    res.status(201).json({ success: true, data: work });
+
+    const sanitized = sanitizeWork(req.body);
+    const created = await store.atomic((works) => {
+      const maxId = works.reduce((max, w) => Math.max(max, w.id), 0);
+      const work = { id: maxId + 1, ...sanitized, createdAt: new Date().toISOString() };
+      works.unshift(work);
+      return works;
+    });
+
+    const newWork = created[0];
+    res.status(201).json({ success: true, data: newWork });
   } catch (e) { next(e); }
 });
 
-// PUT update work
+// PUT update work — partial update support
 app.put('/api/works/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid ID' });
     const errors = validateWork(req.body);
     if (errors.length) return res.status(400).json({ success: false, message: errors.join('; ') });
-    const works = store.read();
-    const idx = works.findIndex(w => w.id === id);
-    if (idx === -1) return res.status(404).json({ success: false, message: 'Work not found' });
-    works[idx] = {
-      ...works[idx],
-      ...sanitizeWork(req.body),
-      id: works[idx].id, // ID is immutable
-      updatedAt: new Date().toISOString(),
-    };
-    await store.write(works);
-    res.json({ success: true, data: works[idx] });
+
+    const updates = sanitizeWork(req.body, true);
+    let updatedWork = null;
+
+    await store.atomic((works) => {
+      const idx = works.findIndex(w => w.id === id);
+      if (idx === -1) return works; // not found, no change
+      works[idx] = { ...works[idx], ...updates, id, updatedAt: new Date().toISOString() };
+      updatedWork = works[idx];
+      return works;
+    });
+
+    if (!updatedWork) return res.status(404).json({ success: false, message: 'Work not found' });
+    res.json({ success: true, data: updatedWork });
   } catch (e) { next(e); }
 });
 
@@ -351,11 +420,17 @@ app.delete('/api/works/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid ID' });
-    const works = store.read();
-    const before = works.length;
-    const filtered = works.filter(w => w.id !== id);
-    if (filtered.length === before) return res.status(404).json({ success: false, message: 'Work not found' });
-    await store.write(filtered);
+
+    let found = false;
+    await store.atomic((works) => {
+      const idx = works.findIndex(w => w.id === id);
+      if (idx === -1) return works;
+      found = true;
+      works.splice(idx, 1);
+      return works;
+    });
+
+    if (!found) return res.status(404).json({ success: false, message: 'Work not found' });
     res.json({ success: true });
   } catch (e) { next(e); }
 });
@@ -364,17 +439,15 @@ app.delete('/api/works/:id', async (req, res, next) => {
 app.post('/api/upload', (req, res, next) => {
   upload.single('image')(req, res, (err) => {
     if (err) {
-      if (err instanceof multer.MulterError) {
-        return res.status(400).json({ success: false, message: err.message });
-      }
-      return res.status(400).json({ success: false, message: err.message });
+      const status = err instanceof multer.MulterError ? 400 : 400;
+      return res.status(status).json({ success: false, message: err.message });
     }
     if (!req.file) return res.status(400).json({ success: false, message: 'No file provided' });
     res.json({ success: true, url: '/images/uploads/' + req.file.filename });
   });
 });
 
-// POST batch sync
+// POST batch sync — validate all items
 app.post('/api/works/batch', async (req, res, next) => {
   try {
     if (!Array.isArray(req.body)) {
@@ -423,7 +496,7 @@ app.use((err, req, res, next) => {
 
 const server = app.listen(config.port, () => {
   console.log('═'.repeat(50));
-  console.log(`  Portfolio Backend  v2.0`);
+  console.log(`  Portfolio Backend  v2.1`);
   console.log(`  Environment: ${config.env}`);
   console.log(`  http://localhost:${config.port}`);
   console.log(`  API:  http://localhost:${config.port}/api/works`);
@@ -431,8 +504,10 @@ const server = app.listen(config.port, () => {
   console.log('═'.repeat(50));
 });
 
-// Graceful shutdown
+let shuttingDown = false;
 function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
   console.log(`\n[${signal}] Shutting down gracefully...`);
   server.close(() => {
     console.log('Server closed. Goodbye.');
@@ -449,12 +524,14 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 // Unhandled rejection safety net
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   console.error('[FATAL] Unhandled Rejection:', reason);
 });
+
+// Uncaught exception — log and shutdown gracefully
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught Exception:', err);
-  process.exit(1);
+  shutdown('uncaughtException');
 });
 
 module.exports = { app, store, shutdown };
