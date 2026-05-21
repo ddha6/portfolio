@@ -213,9 +213,14 @@ body::after{
 }
 .work-card{
   position:relative;cursor:pointer;
-  background:var(--glass-strong);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
-  border:1px solid var(--glass-border);border-radius:var(--radius-lg);
-  box-shadow:var(--glass-shadow);overflow:hidden;
+  background:rgba(255,255,255,.75);backdrop-filter:var(--blur-heavy);-webkit-backdrop-filter:var(--blur-heavy);
+  border:1px solid rgba(0,0,0,.07);border-radius:var(--radius-lg);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,.04),
+    0 4px 18px rgba(0,0,0,.06),
+    0 14px 44px rgba(0,0,0,.05),
+    inset 0 1px 0 rgba(255,255,255,.65);
+  overflow:hidden;
   opacity:0;transform:translateY(20px);
   transition:box-shadow .45s var(--ease-out),transform .45s var(--ease-out),opacity .5s;
 }
@@ -227,7 +232,11 @@ body::after{
 .work-card:hover::after{opacity:1}
 .work-card.revealed{opacity:1;transform:translateY(0)}
 .work-card:hover{
-  box-shadow:var(--glass-shadow-lg);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,.05),
+    0 8px 28px rgba(0,0,0,.09),
+    0 20px 56px rgba(0,0,0,.07),
+    inset 0 1px 0 rgba(255,255,255,.7);
   transform:translateY(-4px);
 }
 .work-card:active{transform:scale(.98)}
