@@ -18,19 +18,8 @@ if not exist "%src%" (
 )
 copy /y "%src%" "D:\HI\1\data.js" >nul
 echo ✓ data.js 已更新
-
 echo.
-echo 提取图片并压缩 data.js...
-node extract-images.js
-if %errorlevel% neq 0 (
-    echo ❌ 图片提取失败
-    pause
-    exit /b
-)
-echo ✓ data.js 已瘦身
-
-echo.
-git add data.js images/works/
+git add data.js
 git commit -m "update: data refresh"
 git push origin main
 echo.
