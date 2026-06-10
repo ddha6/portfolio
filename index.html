@@ -769,7 +769,7 @@ async function openDetail(id){
   if(carouselImgs.length>0){
     html+=`<div class="detail-hero"><div class="detail-hero-track" id="heroTrack">`;
     carouselImgs.forEach((src,i)=>{
-      html+=`<div class="detail-hero-slide"><img src="${src}" alt="${w.title}"></div>`;
+      html+=`<div class="detail-hero-slide"><img src="${src}" alt="${w.title}"${i===0?' fetchpriority="high"':' loading="lazy"'}></div>`;
     });
     html+=`</div>`;
     if(carouselImgs.length>1){
